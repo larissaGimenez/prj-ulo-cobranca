@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: prj-ulo-cobranca
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www/html
+    networks:
+      - ulo-network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_DATABASE: 'bd-ulo-cobranca'
+      MYSQL_ROOT_PASSWORD: 'admin123'
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - ulo-network
+
+networks:
+  ulo-network:
+    driver: bridge
+
+volumes:
+  db-data:
