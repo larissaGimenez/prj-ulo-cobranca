@@ -1,58 +1,84 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚀 Projeto ULO - Sistema de Cobrança
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema de gestão de cobranças desenvolvido com **Laravel 11** e **Template Phoenix**, integrado ao **n8n** para automação de fluxos de e-mail e onboarding de usuários.
 
-## About Laravel
+## 🛠️ Tecnologias Utilizadas
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+* **Backend:** PHP 8.2+ / Laravel 11
+* **Frontend:** Blade / Phoenix Template (Bootstrap 5)
+* **Banco de Dados:** MySQL 8
+* **Automação:** n8n (via Webhooks e OAuth2)
+* **Infra:** Docker & Docker Compose
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 📦 Requisitos para Instalação
 
-## Learning Laravel
+* Docker e Docker Compose instalados.
+* Uma conta Google Cloud (para envio de e-mails via Gmail API).
+* Instância do n8n ativa.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🔧 Passo a Passo para Instalação
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+### 1. Clonar e Configurar o Laravel
 ```bash
-composer require laravel/boost --dev
+# Clone o repositório
+git clone [https://github.com/seu-usuario/prj-ulo-cobranca.git](https://github.com/seu-usuario/prj-ulo-cobranca.git)
+cd prj-ulo-cobranca
 
-php artisan boost:install
-```
+# Copie o arquivo de exemplo do ambiente
+cp .env.example .env
+2. Subir os Containers
+Bash
+docker-compose up -d
+3. Instalar Dependências e Gerar Chaves
+Bash
+docker-compose exec app composer install
+docker-compose exec app php artisan key:generate
+docker-compose exec app php artisan migrate
+⚙️ Configuração do Ambiente (.env)
+Edite o seu arquivo .env com as chaves de integração do n8n:
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Snippet de código
+# URL do seu Laravel (importante para os links de convite)
+APP_URL=http://seu-dominio-ou-ip:8000
 
-## Contributing
+# Configurações do n8n
+N8N_WEBHOOK_URL=[https://seu-n8n.com/webhook/identificador-do-webhook](https://seu-n8n.com/webhook/identificador-do-webhook)
+N8N_API_KEY=sua_chave_segura_definida_no_header
+🤖 Configuração do Fluxo n8n
+O sistema dispara um convite de onboarding via Webhook. Siga estes passos no n8n:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Crie um Webhook Node:
 
-## Code of Conduct
+Method: POST
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Authentication: Header Auth (Name: X-API-Key)
 
-## Security Vulnerabilities
+Path: O ID gerado para o projeto.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Crie um Gmail Node:
 
-## License
+Conecte via OAuth2 (Certifique-se de ativar a Gmail API no Google Cloud).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Mapeie os campos: To -> user_email, Subject -> "Ative sua conta".
+
+Ative o Workflow: Mude para o modo Production no n8n e atualize a URL no .env do Laravel.
+
+🔑 Funcionalidades Principais
+Gestão de Usuários: Cadastro de novos membros com envio automático de convite.
+
+Onboarding Seguro: O usuário recebe um link assinado (URL::signedRoute) com validade de 2 horas para definir sua própria senha.
+
+Dashboard Phoenix: Visual moderno e responsivo para administração de cobranças.
+
+📝 Comandos Úteis
+Limpar Cache de Configurações:
+docker-compose exec app php artisan config:clear
+
+Ver Logs do Sistema:
+docker-compose exec app tail -f storage/logs/laravel.log
+
+> *Dica: Se estiver testando localmente com HTTPS/n8n Cloud, certifique-se de que o `UserService` utilize `withoutVerifying()` na chamada HTTP para evitar erros de certificado.*
