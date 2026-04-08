@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\SetupPasswordController;
 use App\Http\Controllers\Admin\CredentialController;
+use App\Http\Controllers\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,6 +55,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Área Administrativa
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('credentials', CredentialController::class)->only(['index', 'store', 'destroy']);
+    });
+
+    //Roles
+    Route::prefix('admin')->group(function () {
+        Route::resource('roles', RoleController::class);
     });
 
 });

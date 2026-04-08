@@ -131,8 +131,8 @@
                     </div>
 
                     <div class="nav-item-wrapper">
-                        <a class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }} label-1" href="#"
-                            role="button" data-bs-toggle="" aria-expanded="false">
+                        <a class="nav-link {{ request()->routeIs('roles.*') ? 'active' : '' }} label-1"
+                            href="{{ route('roles.index') }}" role="button" data-bs-toggle="" aria-expanded="false">
                             <div class="d-flex align-items-center">
                                 <div class="dropdown-indicator-icon-wrapper">
                                     <span class="fas fa-caret-right dropdown-indicator-icon d-none"></span>
