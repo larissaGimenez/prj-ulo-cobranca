@@ -10,34 +10,27 @@ class RoleAndPermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpar cache de permissões
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Criar as Permissões
-        $permissions = [
-            'visualizar-usuarios',
-            'gerenciar-usuarios',
-            'visualizar-perfis',
-            'gerenciar-perfis',
-            'visualizar-cobrancas',
-            'criar-cobrancas',
-            'cancelar-cobrancas',
-            'estornar-pagamentos',
+        $modulePermissions = [
+            'access.users',
+            'access.roles',
+            'access.billings',
+            'access.sales',
+            'access.finances',
+            'access.logistics',
+            'access.products',
+            'access.supports',
+            'access.credentials',
         ];
 
-        foreach ($permissions as $permission) {
+        foreach ($modulePermissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Criar a Role Admin e dar todas as permissões
         $roleAdmin = Role::firstOrCreate(['name' => 'admin']);
-        $roleAdmin->syncPermissions(Permission::all());
 
-        // Criar a Role Operador com permissões limitadas
-        $roleOperador = Role::firstOrCreate(['name' => 'operador']);
-        $roleOperador->syncPermissions([
-            'visualizar-cobrancas',
-            'criar-cobrancas'
-        ]);
+        // Admin sempre recebe todas as permissões do sistema
+        $roleAdmin->syncPermissions(Permission::all());
     }
 }

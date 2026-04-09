@@ -12,34 +12,55 @@ use Illuminate\Support\Facades\Log;
 
 class UserService
 {
+    /**
+     * Busca todos os usuários (incluindo deletados) com paginação
+     */
     public function getAllPaginated(int $perPage = 10): LengthAwarePaginator
     {
-        return User::latest()->paginate($perPage);
+        return User::withTrashed()->latest()->paginate($perPage);
     }
 
+    /**
+     * Cria o usuário, atribui Role e dispara convite n8n
+     */
     public function create(array $data): User
     {
-        // 1. Criamos e guardamos na variável $user
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'cpf' => $data['cpf'] ?? null,
+            'cnpj' => $data['cnpj'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'role' => $data['role'] ?? 'user', // Rótulo visual
             'password' => Hash::make(Str::random(32)),
             'status' => 'pending',
         ]);
 
-        // 2. Agora sim chamamos o convite!
+        // Atribui a Role real no Spatie
+        if (isset($data['role'])) {
+            $user->assignRole($data['role']);
+        }
+
         $this->sendInvite($user);
 
-        // 3. Por último, retornamos o objeto para o Controller
         return $user;
     }
 
+    /**
+     * Atualiza dados e sincroniza permissões
+     */
     public function update(User $user, array $data): bool
     {
+        // Tratamento de senha
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
+        }
+
+        // Sincroniza Role do Spatie se houver alteração
+        if (isset($data['role'])) {
+            $user->syncRoles($data['role']);
         }
 
         return $user->update($data);
@@ -50,6 +71,9 @@ class UserService
         return $user->delete();
     }
 
+    /**
+     * Lógica de Convite via Webhook n8n
+     */
     public function sendInvite(User $user): void
     {
         $setupUrl = URL::temporarySignedRoute(

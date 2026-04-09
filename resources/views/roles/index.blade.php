@@ -4,11 +4,11 @@
     <nav class="mb-3" aria-label="breadcrumb">
         <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-            <li class="breadcrumb-item active">Perfis e Permissões</li>
+            <li class="breadcrumb-item active">Grupos de Usuários</li>
         </ol>
     </nav>
 
-    <h2 class="text-bold text-body-emphasis mb-5">Gestão de Perfis (Roles)</h2>
+    <h2 class="text-bold text-body-emphasis mb-5">Grupos de Usuários</h2>
 
     <div id="roles-table-container"
         data-list='{"valueNames":["role_name","permissions_count","created_at"],"page":10,"pagination":true}'>
@@ -29,7 +29,7 @@
                         <span class="fa-solid fa-file-export fs-9 me-2"></span>Exportar
                     </button>
                     <a href="{{ route('roles.create') }}" class="btn btn-primary">
-                        <span class="fas fa-plus me-2"></span>Novo Perfil
+                        <span class="fas fa-plus me-2"></span>Novo Grupo
                     </a>
                 </div>
             </div>
