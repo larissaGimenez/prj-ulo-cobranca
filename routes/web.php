@@ -20,7 +20,9 @@ use App\Http\Controllers\SaleController;
 | Public Routes
 |--------------------------------------------------------------------------
 */
-Route::view('/', 'welcome');
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
 /*
 |--------------------------------------------------------------------------
