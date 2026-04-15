@@ -12,14 +12,16 @@ services:
       - ulo-network
 
   db:
-    image: mysql:8.0
+    image: postgres:15-alpine
+    container_name: ulo-db-postgres
     ports:
-      - "3308:3306"
+      - "5433:5432"
     environment:
-      MYSQL_DATABASE: 'bd-ulo-cobranca'
-      MYSQL_ROOT_PASSWORD: 'admin123'
+      POSTGRES_DB: 'bd-ulo-cobranca'
+      POSTGRES_USER: 'admin'
+      POSTGRES_PASSWORD: 'admin123'
     volumes:
-      - db-data:/var/lib/mysql
+      - db-data-pg:/var/lib/postgresql/data
     networks:
       - ulo-network
 
@@ -28,4 +30,4 @@ networks:
     driver: bridge
 
 volumes:
-  db-data:
+  db-data-pg:

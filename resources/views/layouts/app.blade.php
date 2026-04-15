@@ -46,6 +46,10 @@
     <script src="{{ asset('vendors/dayjs/dayjs.min.js') }}"></script>
     <script src="{{ asset('vendors/echarts/echarts.min.js') }}"></script>
     <script src="{{ asset('assets/js/phoenix.js') }}"></script>
+    <script src="{{ asset('vendors/glightbox/glightbox.min.js') }}"></script>
+    <script src="{{ asset('vendors/sortablejs/Sortable.min.js') }}"></script>
+
+
 
     @stack('scripts')
 </body>

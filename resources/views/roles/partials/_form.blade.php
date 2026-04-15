@@ -9,7 +9,8 @@
         'logistics'   => 'Logística',
         'products'    => 'Produtos',
         'supports'    => 'SAC / Suporte',
-        'credentials' => 'Credenciais de API / Sistema', // <-- Nome amigável
+        'credentials' => 'Credenciais de API / Sistema',
+        'tenants'     => 'Tenants',
     ];
 @endphp
 

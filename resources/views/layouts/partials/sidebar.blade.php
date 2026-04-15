@@ -44,13 +44,13 @@
 
                     @can('access.users')
                         <div class="nav-item-wrapper">
-                            <a class="nav-link {{ request()->routeIs('cadastros.*') ? 'active' : '' }} label-1"
-                                href="{{ route('users.index') }}" role="button">
+                            <a class="nav-link {{ request()->routeIs('clients.*') ? 'active' : '' }} label-1"
+                                href="{{ route('clients.index') }}" role="button">
                                 <div class="d-flex align-items-center">
                                     <div class="dropdown-indicator-icon-wrapper"><span
                                             class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
                                     <span class="nav-link-icon"><span data-feather="user-check"></span></span>
-                                    <span class="nav-link-text-wrapper"><span class="nav-link-text">Cadastros</span></span>
+                                    <span class="nav-link-text-wrapper"><span class="nav-link-text">Clientes</span></span>
                                 </div>
                             </a>
                         </div>
@@ -170,6 +170,20 @@
                                     <span class="nav-link-icon"><span data-feather="lock"></span></span>
                                     <span class="nav-link-text-wrapper"><span
                                             class="nav-link-text">Credenciais</span></span>
+                                </div>
+                            </a>
+                        </div>
+                    @endcan
+
+                    @can('access.tenants')
+                        <div class="nav-item-wrapper">
+                            <a class="nav-link {{ request()->routeIs('admin.tenants.*') ? 'active' : '' }} label-1"
+                                href="{{ route('admin.tenants.index') }}" role="button">
+                                <div class="d-flex align-items-center">
+                                    <div class="dropdown-indicator-icon-wrapper"><span
+                                            class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
+                                    <span class="nav-link-icon"><span data-feather="lock"></span></span>
+                                    <span class="nav-link-text-wrapper"><span class="nav-link-text">Tenants</span></span>
                                 </div>
                             </a>
                         </div>

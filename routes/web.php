@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-// Importação organizada por categoria
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\SetupPasswordController;
@@ -14,6 +13,9 @@ use App\Http\Controllers\LogisticsController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\Admin\TenantController;
+use App\Http\Controllers\ClientController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Área Administrativa
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('credentials', CredentialController::class)->only(['index', 'store', 'destroy']);
+        Route::get('tenants/{tenant}/test', [TenantController::class, 'testConnection'])->name('tenants.test-connection');
+        Route::resource('tenants', TenantController::class);
     });
 
     //Roles
@@ -74,10 +78,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
      * MÓDULO: BILLINGS (Cobrança)
      */
     Route::get('billings', [BillingController::class, 'index'])->name('billings.index');
+    Route::get('billings/create', [BillingController::class, 'create'])->name('billings.create');
+    Route::get('billings/search-clients', [BillingController::class, 'searchClients'])->name('billings.search-clients');
     Route::post('billings', [BillingController::class, 'store'])->name('billings.store');
     Route::get('billings/{id}', [BillingController::class, 'show'])->name('billings.show');
     Route::put('billings/{id}', [BillingController::class, 'update'])->name('billings.update');
     Route::delete('billings/{id}', [BillingController::class, 'destroy'])->name('billings.destroy');
+    Route::get('/billings/sync', [OmieBillingController::class, 'sync'])->name('billings.sync');
 
     /**
      * MÓDULO: FINANCES (Financeiro)
@@ -123,5 +130,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('sales/{id}', [SaleController::class, 'show'])->name('sales.show');
     Route::put('sales/{id}', [SaleController::class, 'update'])->name('sales.update');
     Route::delete('sales/{id}', [SaleController::class, 'destroy'])->name('sales.destroy');
+
+    /**
+     * MÓDULO: CLIENTS (Clientes)
+     */
+
+    Route::resource('clients', ClientController::class)->only(['index', 'show']);
+
+    // Rota do Kanban
+    Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
 
 });
