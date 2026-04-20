@@ -42,21 +42,7 @@
                         </div>
                     @endcan
 
-                    @can('access.users')
-                        <div class="nav-item-wrapper">
-                            <a class="nav-link {{ request()->routeIs('clients.*') ? 'active' : '' }} label-1"
-                                href="{{ route('clients.index') }}" role="button">
-                                <div class="d-flex align-items-center">
-                                    <div class="dropdown-indicator-icon-wrapper"><span
-                                            class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
-                                    <span class="nav-link-icon"><span data-feather="user-check"></span></span>
-                                    <span class="nav-link-text-wrapper"><span class="nav-link-text">Clientes</span></span>
-                                </div>
-                            </a>
-                        </div>
-                    @endcan
-
-                    @can('access.sales')
+                    <!-- @can('access.sales')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }} label-1"
                                 href="{{ route('sales.index') }}" role="button">
@@ -68,9 +54,9 @@
                                 </div>
                             </a>
                         </div>
-                    @endcan
+                    @endcan -->
 
-                    @can('access.finances')
+                    <!-- @can('access.finances')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('finances.*') ? 'active' : '' }} label-1"
                                 href="{{ route('finances.index') }}" role="button">
@@ -82,9 +68,9 @@
                                 </div>
                             </a>
                         </div>
-                    @endcan
+                    @endcan -->
 
-                    @can('access.logistics')
+                    <!-- @can('access.logistics')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('logistics.*') ? 'active' : '' }} label-1"
                                 href="{{ route('logistics.index') }}" role="button">
@@ -96,9 +82,9 @@
                                 </div>
                             </a>
                         </div>
-                    @endcan
+                    @endcan -->
 
-                    @can('access.products')
+                    <!-- @can('access.products')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }} label-1"
                                 href="{{ route('products.index') }}" role="button">
@@ -110,9 +96,9 @@
                                 </div>
                             </a>
                         </div>
-                    @endcan
+                    @endcan -->
 
-                    @can('access.supports')
+                    <!-- @can('access.supports')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('supports.*') ? 'active' : '' }} label-1"
                                 href="{{ route('supports.index') }}" role="button">
@@ -124,7 +110,7 @@
                                 </div>
                             </a>
                         </div>
-                    @endcan
+                    @endcan -->
                 </li>
 
                 <li class="nav-item">
@@ -160,7 +146,7 @@
                         </div>
                     @endcan
 
-                    @can('access.credentials')
+                    <!-- @can('access.credentials')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('credentials.*') ? 'active' : '' }} label-1"
                                 href="{{ route('admin.credentials.index') }}" role="button">
@@ -173,21 +159,8 @@
                                 </div>
                             </a>
                         </div>
-                    @endcan
+                    @endcan -->
 
-                    @can('access.tenants')
-                        <div class="nav-item-wrapper">
-                            <a class="nav-link {{ request()->routeIs('admin.tenants.*') ? 'active' : '' }} label-1"
-                                href="{{ route('admin.tenants.index') }}" role="button">
-                                <div class="d-flex align-items-center">
-                                    <div class="dropdown-indicator-icon-wrapper"><span
-                                            class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
-                                    <span class="nav-link-icon"><span data-feather="lock"></span></span>
-                                    <span class="nav-link-text-wrapper"><span class="nav-link-text">Tenants</span></span>
-                                </div>
-                            </a>
-                        </div>
-                    @endcan
                 </li>
             </ul>
         </div>

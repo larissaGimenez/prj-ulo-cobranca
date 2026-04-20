@@ -1,182 +1,210 @@
 @extends('layouts.app')
 
 @section('content')
-    <nav class="mb-3" aria-label="breadcrumb">
-        <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-            <li class="breadcrumb-item active">Central de Cobrança</li>
-        </ol>
-    </nav>
+    {{-- Container Principal travado na altura da tela --}}
+    <div class="kanban-page-wrapper d-flex flex-column" style="height: calc(100vh - 160px); overflow: hidden;">
 
-    <div class="row g-3 flex-between-center mb-5">
-        <div class="col-auto">
-            <h2 class="mb-2">Painel de Cobrança</h2>
-            <h5 class="text-body-tertiary fw-semibold">Visualização unificada de títulos e negociações do cliente.</h5>
-        </div>
-        <div class="col-auto">
-            <button class="btn btn-phoenix-secondary me-2">
-                <span class="fas fa-file-export me-2"></span>Exportar Relatório
-            </button>
-            @can('criar-cobrancas')
-                <button class="btn btn-primary">
-                    <span class="fas fa-plus me-2"></span>Nova Cobrança
+        {{-- Cabeçalho --}}
+        <div class="row g-3 flex-between-center mb-3 flex-shrink-0">
+            <div class="col-auto">
+                <nav class="mb-2" aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                        <li class="breadcrumb-item active">Esteira de Cobrança</li>
+                    </ol>
+                </nav>
+                <h2 class="mb-0 text-uppercase fw-bolder">Esteira de Cobrança</h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary px-4 shadow-none" data-bs-toggle="modal" data-bs-target="#addStageModal">
+                    <span class="fas fa-plus me-2"></span>Nova Etapa
                 </button>
-            @endcan
+            </div>
+        </div>
+
+        {{-- Área do Board --}}
+        <div class="d-flex overflow-x-auto pb-3 flex-1 custom-scrollbar" id="kanban-board" style="overflow-y: hidden;">
+            @foreach($stages as $stage)
+                <div class="kanban-column me-3 h-100 flex-shrink-0" id="column-{{ $stage->id }}"
+                    style="width: 300px; transition: width 0.2s ease;">
+                    <div
+                        class="kanban-column-content bg-body-highlight rounded-3 border border-translucent d-flex flex-column h-100 shadow-sm">
+
+                        {{-- Header Aberto (Estilo do segundo Kanban) --}}
+                        <div class="d-flex align-items-center p-3 column-header flex-shrink-0 border-bottom border-translucent">
+                            <span class="fa-solid fa-circle text-primary me-2 fs-11"></span>
+                            <h5 class="mb-0 flex-1 fw-bold fs-9 text-uppercase text-nowrap">{{ $stage->name }}</h5>
+                            <div class="ms-2 d-flex align-items-center">
+                                <span
+                                    class="badge badge-phoenix badge-phoenix-secondary fs-11 me-2">{{ $stage->operations->count() }}</span>
+                                <button class="btn btn-link p-0 text-body-tertiary toggle-column"
+                                    onclick="toggleColumn({{ $stage->id }})">
+                                    <span class="fas fa-chevron-left fs-11"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Header Colapsado (Corrigido para girar o texto corretamente) --}}
+                        <div class="column-collapsed-header d-none flex-column align-items-center py-3 h-100 flex-shrink-0 cursor-pointer"
+                            onclick="toggleColumn({{ $stage->id }})">
+                            <span class="fa-solid fa-circle text-primary mb-3 fs-11"></span>
+                            <h5 class="mb-0 text-nowrap vertical-text fw-bold fs-9 text-uppercase">{{ $stage->name }}</h5>
+                            <span
+                                class="badge badge-phoenix badge-phoenix-secondary mt-auto fs-11">{{ $stage->operations->count() }}</span>
+                        </div>
+
+                        {{-- Itens (Cards de Cobrança - Sem Drag and Drop) --}}
+                        <div class="kanban-items-container flex-1 overflow-y-auto scrollbar p-2">
+                            @forelse($stage->operations as $operation)
+                                            @php
+                                                $data = $operation->metadata;
+                                                $cliente = $data['cliente'] ?? [];
+                                                $empresa = $cliente['empresa'] ?? 'N/A';
+                                                $totalDivida = $data['total_divida'] ?? 0;
+                                                $vencidosCount = $data['vencidos_count'] ?? 0;
+                                            @endphp
+                                <div
+                                                class="card mb-2 shadow-none border border-translucent hover-card-style transition-base bg-white">
+                                                <div class="card-body p-2 px-3">
+                                                    <h6 class="mb-1 fw-bold text-body-highlight fs-10 text-truncate">
+                                                        {{ $cliente['nome'] ?? 'Cliente' }}</h6>
+                                                    <p class="text-primary fw-bold fs-11 mb-2 text-truncate">
+                                                        <i class="fas fa-building me-1"></i>{{ Str::limit($empresa, 25) }}
+                                                    </p>
+                                                    <div class="bg-body-highlight rounded-2 p-1 px-2 mb-2 border border-translucent">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <small class="text-body-tertiary fw-bold fs-11 uppercase">Dívida</small>
+                                                            <span class="text-danger fw-bolder fs-10">R$
+                                                                {{ number_format($totalDivida, 2, ',', '.') }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <span class="text-body-tertiary fs-11"><i
+                                                                class="fas fa-file-invoice me-1"></i>{{ $vencidosCount }} títulos</span>
+                                                        <a href="{{ route('billings.show', $cliente['id'] ?? 0) }}"
+                                                            class="btn btn-sm btn-link p-0 text-primary fw-bold fs-11">GERENCIAR <i
+                                                                class="fas fa-chevron-right ms-1"></i></a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                            @empty
+                                <div class="text-center py-5 opacity-25 empty-info">
+                                    <i class="fas fa-folder-open fs-3 mb-2 d-block"></i>
+                                    <p class="fs-11 mb-0 italic">Vazio</p>
+                                </div>
+                            @endforelse
+                        </div>
+
+                    </div>
+                </div>
+            @endforeach
+
+            {{-- Botão Nova Etapa (Estilo borda tracejada do segundo kanban) --}}
+            <div class="add-column-wrapper flex-shrink-0" style="min-width: 280px;">
+                <button
+                    class="btn btn-phoenix-secondary w-100 h-100 border-dashed border-2 d-flex flex-center flex-column py-4"
+                    data-bs-toggle="modal" data-bs-target="#addStageModal">
+                    <span class="fas fa-plus fs-2 mb-2"></span>
+                    <span class="fw-bold fs-9 tracking-wider">ADICIONAR ETAPA</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        
-        <div class="col-12">
-            <div class="card shadow-none border border-300" data-component-card="data-component-card">
-                <div class="card-header bg-body-tertiary py-2 px-3">
-                    <h6 class="mb-0 text-uppercase fs-10 text-body-highlight fw-bold">
-                        <span class="fas fa-user-tie me-2 text-primary"></span>
-                        Ficha Cadastral do Cliente
-                    </h6>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-auto">
-                            <div class="avatar avatar-4xl rounded-circle border border-2 border-primary-100">
-                                <div class="avatar-name rounded-circle text-primary bg-primary-subtle fs-5">
-                                    <span>MS</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <h3 class="mb-1 text-bold">Larissa Manzano</h3>
-                            <p class="text-body-tertiary fs-9 mb-1">
-                                <span class="fas fa-envelope me-2"></span>larissa@material.com.br
-                            </p>
-                            <p class="text-body-tertiary fs-9 mb-0">
-                                <span class="fas fa-phone me-2"></span>(19) 98765-4321
-                            </p>
-                        </div>
-                        <div class="col-md-auto text-md-end border-start border-300 ms-md-4 ps-md-4">
-                            <p class="text-body-tertiary fs-10 mb-1 text-uppercase fw-bold">Risco de Crédito</p>
-                            <h1 class="mb-0 text-warning">Score: B</h1>
+    {{-- Modal Nova Etapa --}}
+    <div class="modal fade" id="addStageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border border-translucent shadow-lg text-start">
+                <form action="{{ route('billings.store_stage') }}" method="POST">
+                    @csrf
+                    <div class="modal-header px-4 border-0">
+                        <h5 class="modal-title">Nova Etapa</h5>
+                        <button class="btn p-1" type="button" data-bs-dismiss="modal">
+                            <span class="fas fa-times fs-9"></span>
+                        </button>
+                    </div>
+                    <div class="modal-body px-4 pb-4 pt-0">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-body-highlight fs-10" for="stageName">Nome da
+                                Etapa</label>
+                            <input class="form-control shadow-none" id="stageName" name="name" type="text"
+                                placeholder="Ex: Em Negociação" required />
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-xl-7">
-            <div class="card shadow-none border border-300 h-100" data-component-card="data-component-card">
-                <div class="card-header bg-body-tertiary py-2 px-3 flex-between-center">
-                    <h6 class="mb-0 text-uppercase fs-10 text-body-highlight fw-bold">
-                        <span class="fas fa-money-bill-wave me-2 text-success"></span>
-                        Títulos em Aberto e Vencidos
-                    </h6>
-                    <span class="badge badge-phoenix badge-phoenix-danger fs-10">4 Vencidos</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive scrollbar">
-                        <table class="table table-sm fs-9 mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="white-space-nowrap align-middle ps-3">Vencimento</th>
-                                    <th class="white-space-nowrap align-middle">Documento</th>
-                                    <th class="white-space-nowrap align-middle text-end">Valor R$</th>
-                                    <th class="white-space-nowrap align-middle text-end pe-3">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $titulos = [
-                                    ['05/04/2026', 'NF-12345', '1.250,00', 'danger', 'Vencido'],
-                                    ['15/04/2026', 'NF-12346', '3.890,50', 'danger', 'Vencido'],
-                                    ['10/05/2026', 'NF-12400', '950,00', 'warning', 'A Vencer'],
-                                    ['05/06/2026', 'NF-12510', '2.100,00', 'warning', 'A Vencer'],
-                                ]; @endphp
-                                @foreach($titulos as $titulo)
-                                    <tr class="align-middle">
-                                        <td class="ps-3">{{ $titulo[0] }}</td>
-                                        <td>{{ $titulo[1] }}</td>
-                                        <td class="text-end fw-bold">{{ $titulo[2] }}</td>
-                                        <td class="text-end pe-3">
-                                            <span class="badge badge-phoenix fs-10 badge-phoenix-{{ $titulo[3] }}">{{ $titulo[4] }}</span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="modal-footer border-0 px-4 pb-4">
+                        <button class="btn btn-link text-body px-3 shadow-none" type="button"
+                            data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary px-5 shadow-none fw-bold" type="submit">CRIAR ETAPA</button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
-
-        <div class="col-12 col-xl-5">
-            <div class="card shadow-none border border-300 h-100" data-component-card="data-component-card">
-                <div class="card-header bg-body-tertiary py-2 px-3 flex-between-center">
-                    <h6 class="mb-0 text-uppercase fs-10 text-body-highlight fw-bold">
-                        <span class="fas fa-handshake me-2 text-warning"></span>
-                        Histórico de Negociações
-                    </h6>
-                    <button class="btn btn-link btn-sm text-body me-n3 px-0">Ver Todas</button>
-                </div>
-                <div class="card-body p-3">
-                    @php $negociacoes = [
-                        ['danger', 'Acordo quebrado pelo cliente', 'Vencimento 10/04/2026', 'R$ 2.500,00'],
-                        ['success', 'Acordo firmado e pago', 'Pago em 01/03/2026', 'R$ 5.140,00'],
-                        ['warning', 'Em negociação (Aguarda aceite)', 'Proposta enviada hoje', 'R$ 950,00'],
-                    ]; @endphp
-                    @foreach($negociacoes as $negoc)
-                        <div class="d-flex align-items-start mb-3 border-bottom border-200 pb-3">
-                            <span class="fa-solid fa-circle text-{{ $negoc[0] }} fs-10 mt-1"></span>
-                            <div class="ms-3 flex-1">
-                                <h6 class="mb-1 text-bold">{{ $negoc[1] }}</h6>
-                                <p class="text-body-tertiary fs-9 mb-0">Status: {{ $negoc[2] }}</p>
-                                <p class="text-body-highlight fs-9 mb-0 fw-bold">Valor Acordo: {{ $negoc[3] }}</p>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12">
-            <div class="card shadow-none border border-300" data-component-card="data-component-card">
-                <div class="card-header bg-body-tertiary py-2 px-3">
-                    <h6 class="mb-0 text-uppercase fs-10 text-body-highlight fw-bold">
-                        <span class="fas fa-comments me-2 text-info"></span>
-                        Histórico de Interações / Comentários
-                    </h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="p-3 border-bottom border-200 bg-light">
-                        <label class="form-label fs-9" for="novo_comentario">Adicionar Comentário Rápido</label>
-                        <div class="input-group">
-                            <input class="form-control" id="novo_comentario" type="text" placeholder="Digite sua observação sobre a cobrança..." />
-                            <button class="btn btn-phoenix-primary" type="button">Postar</button>
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        @php $comentarios = [
-                            ['Admin', 'MS', 'primary', 'primary-subtle', '09/04/2026 14:30', 'Cliente alega que não recebeu o boleto bancário por e-mail. Reenviado via WhatsApp.'],
-                            ['Larissa Manzano (Cliente)', 'LM', 'warning', 'warning-subtle', '08/04/2026 11:15', 'Registrou promessa de pagamento para 10/04/2026 na central do cliente.'],
-                            ['Sistema', 'SI', 'tertiary', 'tertiary-subtle', '01/04/2026 09:00', 'Webhook n8n: E-mail de lembrete de vencimento enviado com sucesso.'],
-                        ]; @endphp
-                        @foreach($comentarios as $coment)
-                            <div class="d-flex align-items-start mb-4">
-                                <div class="avatar avatar-m rounded-circle">
-                                    <div class="avatar-name rounded-circle text-{{ $coment[2] }} bg-{{ $coment[3] }}">
-                                        <span>{{ $coment[1] }}</span>
-                                    </div>
-                                </div>
-                                <div class="ms-3 flex-1 bg-light p-3 rounded-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <h6 class="mb-0 text-bold">{{ $coment[0] }}</h6>
-                                        <p class="text-body-tertiary fs-10 mb-0">{{ $coment[4] }}</p>
-                                    </div>
-                                    <p class="text-body-highlight fs-9 mb-0">{{ $coment[5] }}</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        function toggleColumn(id) {
+            const col = document.getElementById(`column-${id}`);
+            const normalHeader = col.querySelector('.column-header');
+            const collapsedHeader = col.querySelector('.column-collapsed-header');
+            const items = col.querySelector('.kanban-items-container');
+
+            if (col.classList.contains('collapsed')) {
+                col.classList.remove('collapsed');
+                col.style.width = '300px';
+                normalHeader.classList.replace('d-none', 'd-flex');
+                collapsedHeader.classList.replace('d-flex', 'd-none');
+                items.classList.remove('d-none');
+            } else {
+                col.classList.add('collapsed');
+                col.style.width = '64px';
+                normalHeader.classList.replace('d-flex', 'd-none');
+                collapsedHeader.classList.replace('d-none', 'd-flex');
+                items.classList.add('d-none');
+            }
+        }
+    </script>
+@endpush
+
+@push('css')
+    <style>
+        body {
+            overflow: hidden !important;
+        }
+
+        .vertical-text {
+            writing-mode: vertical-lr;
+            transform: rotate(180deg);
+            display: inline-block;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--phoenix-gray-300);
+            border-radius: 10px;
+        }
+
+        .hover-card-style:hover {
+            transform: translateY(-2px);
+            border-color: var(--phoenix-primary-300) !important;
+            box-shadow: var(--phoenix-box-shadow-sm) !important;
+        }
+
+        .transition-base {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .bg-body-highlight {
+            background-color: #fcfcfd !important;
+        }
+
+        .border-dashed {
+            border-style: dashed !important;
+        }
+    </style>
+@endpush

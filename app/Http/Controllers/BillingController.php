@@ -2,67 +2,73 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\View\View;
-use App\Http\Requests\StoreBillingRequest;
-use App\Http\Requests\UpdateBillingRequest;
-use App\Models\Billing;
+use App\Models\ClienteInadimplente;
+use App\Models\TituloContaReceber;
+use App\Models\BillingKanbanStage;
+use App\Models\BillingOperation;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class BillingController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lista todos os clientes inadimplentes.
      */
-    public function index(): View
+    public function index()
     {
-        $billings = Billing::latest()->paginate(10);
-        return view('billings.index', compact('billings'));
+        // Buscamos os estágios com suas operações vinculadas (usando o snapshot metadata)
+        $stages = BillingKanbanStage::with(['operations' => function($query) {
+            $query->orderBy('updated_at', 'desc');
+        }])->orderBy('sort_order', 'asc')->get();
+
+        return view('billings.index', compact('stages'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Adiciona uma nova etapa ao Kanban.
      */
-    public function create()
+    public function storeStage(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $lastOrder = BillingKanbanStage::max('sort_order') ?? -1;
+
+        BillingKanbanStage::create([
+            'name' => $request->name,
+            'sort_order' => $lastOrder + 1
+        ]);
+
+        return redirect()->back()->with('success', 'Nova etapa adicionada com sucesso!');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Exibe os detalhes de um cliente específico e seus títulos.
      */
-    public function store(StoreBillingRequest $request)
+    public function show($id)
     {
-        //
-    }
+        $cliente = ClienteInadimplente::findOrFail($id);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Billing $billing)
-    {
-        //
-    }
+        // Trazemos TODOS os 17 títulos
+        $titulos = TituloContaReceber::whereRaw('"cod_cliente" = ?', [(string) $cliente->cliente_id_omie])
+            ->orderByRaw("to_date(data_venc, 'DD/MM/YYYY') ASC")
+            ->get();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Billing $billing)
-    {
-        //
-    }
+        // SOMA FINANCEIRA: Apenas o que é dívida real (Vencido e Não Pago)
+        $totalDivida = $titulos->filter(function ($t) {
+            $vencido = \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc)->isPast();
+            $aberto = !in_array(strtoupper($t->status), ['PAGO', 'LIQUIDADO', 'RECEBIDO']);
+            return $vencido && $aberto;
+        })->sum('valor_float');
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateBillingRequest $request, Billing $billing)
-    {
-        //
-    }
+        // CONTADOR DE BADGE: Apenas os atrasados
+        $vencidosCount = $titulos->filter(function ($t) {
+            $vencido = \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc)->isPast();
+            $aberto = !in_array(strtoupper($t->status), ['PAGO', 'LIQUIDADO', 'RECEBIDO']);
+            return $vencido && $aberto;
+        })->count();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Billing $billing)
-    {
-        //
+        return view('billings.show', compact('cliente', 'titulos', 'vencidosCount', 'totalDivida'));
     }
 }

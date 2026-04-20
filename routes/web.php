@@ -16,6 +16,8 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\NegotiationController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -77,14 +79,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     /**
      * MÓDULO: BILLINGS (Cobrança)
      */
-    Route::get('billings', [BillingController::class, 'index'])->name('billings.index');
-    Route::get('billings/create', [BillingController::class, 'create'])->name('billings.create');
-    Route::get('billings/search-clients', [BillingController::class, 'searchClients'])->name('billings.search-clients');
-    Route::post('billings', [BillingController::class, 'store'])->name('billings.store');
-    Route::get('billings/{id}', [BillingController::class, 'show'])->name('billings.show');
-    Route::put('billings/{id}', [BillingController::class, 'update'])->name('billings.update');
-    Route::delete('billings/{id}', [BillingController::class, 'destroy'])->name('billings.destroy');
-    Route::get('/billings/sync', [OmieBillingController::class, 'sync'])->name('billings.sync');
+    Route::get('/billings', [BillingController::class, 'index'])->name('billings.index');
+    Route::post('/billings/stages', [BillingController::class, 'storeStage'])->name('billings.store_stage');
+    Route::get('/billings/{id}', [BillingController::class, 'show'])->name('billings.show');
 
     /**
      * MÓDULO: FINANCES (Financeiro)
@@ -139,5 +136,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rota do Kanban
     Route::get('/kanban', [KanbanController::class, 'index'])->name('kanban.index');
+
+    //Modulo Negociações
+    Route::resource('negotiations', NegotiationController::class);
 
 });
