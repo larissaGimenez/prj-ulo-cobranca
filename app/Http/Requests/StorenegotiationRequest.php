@@ -24,13 +24,19 @@ class StorenegotiationRequest extends FormRequest
     {
         return [
             'operation_id' => 'required|exists:billing_operations,id',
-            'status' => 'required|string|in:em aberto,em andamento,concluído,cancelado',
-            'details' => [
-                'valor_proposta' => 'required|numeric',
-                'numero_parcelas' => 'required|integer',
-                'valor_parcela' => 'required|numeric',
-                'data_primeiro_vencimento' => 'required|date'
-            ]
+            'status' => 'required|string|in:em andamento,quitado,cancelado',
+            'details' => 'required|array',
+            'details.valor_proposta' => 'required|numeric',
+            'details.valor_entrada' => 'nullable|numeric',
+            'details.numero_parcelas' => 'required|integer',
+            'details.valor_parcela' => 'nullable|numeric',
+            'details.data_vencimento' => 'nullable|date',
+            'details.tipo_acordo' => 'required|string|in:À vista,Parcelado,Prorrogação',
+            'details.observacoes' => 'nullable|string',
+            'details.parcelas' => 'nullable|array',
+            'details.parcelas.*.valor' => 'nullable|numeric',
+            'details.parcelas.*.vencimento' => 'nullable|date',
+            'details.parcelas.*.id' => 'nullable|integer',
         ];
     }
 
@@ -47,8 +53,43 @@ class StorenegotiationRequest extends FormRequest
             'details.numero_parcelas.integer' => 'Número de parcelas deve ser inteiro.',
             'details.valor_parcela.required' => 'Valor da parcela é obrigatório.',
             'details.valor_parcela.numeric' => 'Valor da parcela deve ser numérico.',
-            'details.data_primeiro_vencimento.required' => 'Data do primeiro vencimento é obrigatória.',
-            'details.data_primeiro_vencimento.date' => 'Data do primeiro vencimento inválida.'
+            'details.data_vencimento.required' => 'Data de vencimento é obrigatória.',
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        if ($this->has('details')) {
+            $details = $this->input('details');
+
+            // Limpar valores principais
+            if (isset($details['valor_proposta'])) {
+                $details['valor_proposta'] = $this->cleanMoney($details['valor_proposta']);
+            }
+            if (isset($details['valor_entrada'])) {
+                $details['valor_entrada'] = $this->cleanMoney($details['valor_entrada']);
+            }
+            if (isset($details['valor_parcela'])) {
+                $details['valor_parcela'] = $this->cleanMoney($details['valor_parcela']);
+            }
+
+            // Limpar valores das parcelas
+            if (isset($details['parcelas']) && is_array($details['parcelas'])) {
+                foreach ($details['parcelas'] as $key => $parcela) {
+                    if (isset($parcela['valor'])) {
+                        $details['parcelas'][$key]['valor'] = $this->cleanMoney($parcela['valor']);
+                    }
+                }
+            }
+
+            $this->merge(['details' => $details]);
+        }
+    }
+
+    private function cleanMoney($value)
+    {
+        if (is_null($value) || $value === '') return null;
+        // Transforma "999.999,99" em "999999.99"
+        return str_replace(',', '.', str_replace('.', '', $value));
     }
 }

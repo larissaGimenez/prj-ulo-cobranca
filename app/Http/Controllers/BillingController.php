@@ -44,6 +44,30 @@ class BillingController extends Controller
     }
 
     /**
+     * Atualiza o nome de uma etapa.
+     */
+    public function updateStage(Request $request, $id)
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        $stage = BillingKanbanStage::findOrFail($id);
+        $stage->update(['name' => $request->name]);
+        return redirect()->back()->with('success', 'Etapa atualizada!');
+    }
+
+    /**
+     * Remove uma etapa se estiver vazia.
+     */
+    public function destroyStage($id)
+    {
+        $stage = BillingKanbanStage::withCount('operations')->findOrFail($id);
+        if ($stage->operations_count > 0) {
+            return redirect()->back()->with('error', 'Não é possível excluir uma etapa que possui cards.');
+        }
+        $stage->delete();
+        return redirect()->back()->with('success', 'Etapa excluída!');
+    }
+
+    /**
      * Exibe os detalhes de um cliente específico e seus títulos.
      */
     public function show($id)
@@ -69,6 +93,9 @@ class BillingController extends Controller
             return $vencido && $aberto;
         })->count();
 
-        return view('billings.show', compact('cliente', 'titulos', 'vencidosCount', 'totalDivida'));
+        // Trazemos a operação vinculada a este cliente (se houver) e suas negociações
+        $operation = BillingOperation::with('negotiations')->where('cliente_id_omie', $cliente->cliente_id_omie)->first();
+
+        return view('billings.show', compact('cliente', 'titulos', 'vencidosCount', 'totalDivida', 'operation'));
     }
 }

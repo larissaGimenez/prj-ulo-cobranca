@@ -15,8 +15,8 @@ class UserUpdateRequest extends FormRequest
 
     public function rules(): array
     {
-        // Captura o ID do usuário da rota (funciona se a rota for /users/{user})
-        $userId = $this->route('user')?->id ?? $this->user;
+        $userParam = $this->route('user');
+        $userId = is_object($userParam) ? $userParam->id : $userParam;
 
         return [
             'name' => ['required', 'string', 'max:255'],

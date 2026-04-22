@@ -40,6 +40,17 @@
                                 </div>
                             </a>
                         </div>
+                        <div class="nav-item-wrapper">
+                            <a class="nav-link {{ request()->routeIs('negotiations.*') ? 'active' : '' }} label-1"
+                                href="{{ route('negotiations.index') }}" role="button">
+                                <div class="d-flex align-items-center">
+                                    <div class="dropdown-indicator-icon-wrapper"><span
+                                            class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
+                                    <span class="nav-link-icon"><span data-feather="file-text"></span></span>
+                                    <span class="nav-link-text-wrapper"><span class="nav-link-text">Negociações</span></span>
+                                </div>
+                            </a>
+                        </div>
                     @endcan
 
                     <!-- @can('access.sales')

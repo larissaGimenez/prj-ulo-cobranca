@@ -12,4 +12,9 @@ class Negotiation extends Model
     protected $casts = [
         'details' => AsArrayObject::class,
     ];
+
+    public function operation()
+    {
+        return $this->belongsTo(BillingOperation::class, 'operation_id');
+    }
 }

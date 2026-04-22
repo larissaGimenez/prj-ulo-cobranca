@@ -13,69 +13,63 @@ class NegotiationController extends Controller
     /**
      * Lista as negociações com os dados da operação vinculada.
      */
-    public function index(): JsonResponse
+    public function index()
     {
-        $negotiations = Negotiation::with('operation')->latest()->paginate(15);
-        return response()->json($negotiations);
+        $negotiations = Negotiation::with('operation.cliente')->latest()->paginate(15);
+        return view('negotiations.index', compact('negotiations'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $selectedOperationId = $request->query('operation_id');
         $operations = BillingOperation::with('cliente')->get();
-        return view('negotiations.create', compact('operations'));
+        return view('negotiations.create', compact('operations', 'selectedOperationId'));
     }
 
     /**
      * Armazena uma nova negociação.
      */
-    public function store(StorenegotiationRequest $request): JsonResponse
+    public function store(StorenegotiationRequest $request)
     {
-        // O validate() já é chamado automaticamente pelo FormRequest
         $negotiation = Negotiation::create($request->validated());
 
-        return response()->json([
-            'message' => 'Negociação criada com sucesso!',
-            'data' => $negotiation->load('operation')
-        ], 21);
+        return redirect()->route('negotiations.index')->with('success', 'Negociação criada com sucesso!');
     }
 
     /**
      * Exibe uma negociação específica.
      */
-    public function show(Negotiation $negotiation): JsonResponse
+    public function show(Negotiation $negotiation)
     {
-        return response()->json($negotiation->load('operation'));
+        return view('negotiations.show', compact('negotiation'));
     }
 
     /**
-     * Atualiza uma negociação existente (incluindo dados dentro do JSON).
+     * Exibe o formulário de edição.
      */
-    public function update(Request $request, Negotiation $negotiation): JsonResponse
+    public function edit(Negotiation $negotiation)
     {
-        // Validação simples inline para o update, ou você pode criar um UpdateRequest
-        $validated = $request->validate([
-            'status' => 'sometimes|string',
-            'details' => 'sometimes|array',
-            'details.valor_proposta' => 'sometimes|numeric',
-        ]);
+        $operations = BillingOperation::with('cliente')->get();
+        return view('negotiations.edit', compact('negotiation', 'operations'));
+    }
 
-        $negotiation->update($validated);
+    /**
+     * Atualiza uma negociação existente.
+     */
+    public function update(StorenegotiationRequest $request, Negotiation $negotiation)
+    {
+        $negotiation->update($request->validated());
 
-        return response()->json([
-            'message' => 'Negociação atualizada!',
-            'data' => $negotiation
-        ]);
+        return redirect()->route('negotiations.index')->with('success', 'Negociação atualizada!');
     }
 
     /**
      * Remove uma negociação.
      */
-    public function destroy(Negotiation $negotiation): JsonResponse
+    public function destroy(Negotiation $negotiation)
     {
         $negotiation->delete();
 
-        return response()->json([
-            'message' => 'Negociação removida com sucesso.'
-        ], 204);
+        return redirect()->route('negotiations.index')->with('success', 'Negociação removida com sucesso.');
     }
 }

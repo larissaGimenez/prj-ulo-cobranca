@@ -13,7 +13,7 @@
                         <li class="breadcrumb-item active">Esteira de Cobrança</li>
                     </ol>
                 </nav>
-                <h2 class="mb-0 text-uppercase fw-bolder">Esteira de Cobrança</h2>
+                <h2 class="mb-0 fw-bolder">Esteira de Cobrança</h2>
             </div>
             <div class="col-auto">
                 <button class="btn btn-primary px-4 shadow-none" data-bs-toggle="modal" data-bs-target="#addStageModal">
@@ -35,8 +35,25 @@
                             <span class="fa-solid fa-circle text-primary me-2 fs-11"></span>
                             <h5 class="mb-0 flex-1 fw-bold fs-9 text-uppercase text-nowrap">{{ $stage->name }}</h5>
                             <div class="ms-2 d-flex align-items-center">
-                                <span
-                                    class="badge badge-phoenix badge-phoenix-secondary fs-11 me-2">{{ $stage->operations->count() }}</span>
+                                <span class="badge badge-phoenix badge-phoenix-secondary fs-11 me-2">{{ $stage->operations->count() }}</span>
+                                
+                                <div class="dropdown">
+                                    <button class="btn btn-link p-0 text-body-tertiary me-2" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <span class="fas fa-ellipsis-v fs-11"></span>
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-end py-2">
+                                        <a class="dropdown-item" href="#!" data-bs-toggle="modal" data-bs-target="#editStageModal-{{ $stage->id }}">Editar Etapa</a>
+                                        @if($stage->operations->count() == 0)
+                                            <div class="dropdown-divider"></div>
+                                            <form action="{{ route('billings.destroy_stage', $stage->id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta etapa?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="dropdown-item text-danger">Excluir Etapa</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+
                                 <button class="btn btn-link p-0 text-body-tertiary toggle-column"
                                     onclick="toggleColumn({{ $stage->id }})">
                                     <span class="fas fa-chevron-left fs-11"></span>
@@ -44,13 +61,12 @@
                             </div>
                         </div>
 
-                        {{-- Header Colapsado (Corrigido para girar o texto corretamente) --}}
+                        {{-- Header Colapsado --}}
                         <div class="column-collapsed-header d-none flex-column align-items-center py-3 h-100 flex-shrink-0 cursor-pointer"
-                            onclick="toggleColumn({{ $stage->id }})">
+                            onclick="toggleColumn({{ $stage->id }})" title="{{ $stage->name }}">
                             <span class="fa-solid fa-circle text-primary mb-3 fs-11"></span>
-                            <h5 class="mb-0 text-nowrap vertical-text fw-bold fs-9 text-uppercase">{{ $stage->name }}</h5>
-                            <span
-                                class="badge badge-phoenix badge-phoenix-secondary mt-auto fs-11">{{ $stage->operations->count() }}</span>
+                            {{-- Texto removido conforme alternativa sugerida pelo usuário para evitar erro de orientação --}}
+                            <span class="badge badge-phoenix badge-phoenix-secondary mt-auto fs-11">{{ $stage->operations->count() }}</span>
                         </div>
 
                         {{-- Itens (Cards de Cobrança - Sem Drag and Drop) --}}
@@ -140,6 +156,36 @@
             </div>
         </div>
     </div>
+
+    @foreach($stages as $stage)
+        {{-- Modal Editar Etapa --}}
+        <div class="modal fade" id="editStageModal-{{ $stage->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border border-translucent shadow-lg text-start">
+                    <form action="{{ route('billings.update_stage', $stage->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="modal-header px-4 border-0">
+                            <h5 class="modal-title">Editar Etapa</h5>
+                            <button class="btn p-1" type="button" data-bs-dismiss="modal">
+                                <span class="fas fa-times fs-9"></span>
+                            </button>
+                        </div>
+                        <div class="modal-body px-4 pb-4 pt-0">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-body-highlight fs-10" for="stageName-{{ $stage->id }}">Nome da Etapa</label>
+                                <input class="form-control shadow-none" id="stageName-{{ $stage->id }}" name="name" type="text" value="{{ $stage->name }}" required />
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 px-4 pb-4">
+                            <button class="btn btn-link text-body px-3 shadow-none" type="button" data-bs-dismiss="modal">Cancelar</button>
+                            <button class="btn btn-primary px-5 shadow-none fw-bold" type="submit">SALVAR ALTERAÇÕES</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
 @endsection
 
 @push('scripts')
@@ -173,11 +219,6 @@
             overflow: hidden !important;
         }
 
-        .vertical-text {
-            writing-mode: vertical-lr;
-            transform: rotate(180deg);
-            display: inline-block;
-        }
 
         .custom-scrollbar::-webkit-scrollbar {
             height: 8px;

@@ -13,14 +13,28 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
-#[Fillable(['name', 'email', 'password', 'status', 'invite_sent_at', 'cpf', 'cnpj', 'phone', 'role', 'deleted_at'])]
-#[Hidden(['password', 'remember_token'])]
-
-
 class User extends Authenticatable
 {
-
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes, HasRoles;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'status',
+        'invite_sent_at',
+        'cpf',
+        'cnpj',
+        'phone',
+        'role',
+        'deleted_at',
+        'email_verified_at'
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
     protected function casts(): array
     {

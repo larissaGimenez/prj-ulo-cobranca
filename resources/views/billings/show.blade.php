@@ -1,11 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-    {{-- Estilo para o Scroll da Tabela --}}
     <style>
         .table-scroll-limit {
             max-height: 400px;
-            /* Ajuste conforme necessário */
             overflow-y: auto;
         }
     </style>
@@ -141,26 +139,56 @@
             </div>
         </div>
 
-        {{-- HISTÓRICO DE NEGOCIAÇÕES COM BOTÃO MOCKUP --}}
+        {{-- HISTÓRICO DE NEGOCIAÇÕES --}}
         <div class="col-12 col-xl-5">
             <div class="card shadow-none border border-300 h-100">
-                <div class="card-header bg-body-tertiary py-2 px-3 flex-between-center">
+                <div class="card-header bg-body-tertiary py-2 px-3 d-flex justify-content-between">
                     <h6 class="mb-0 text-uppercase fs-10 text-body-highlight fw-bold">
                         <span class="fas fa-handshake me-2 text-warning"></span>
                         Histórico de Negociações
                     </h6>
-                    <a href="{{ route('negotiations.create') }}" class="btn btn-phoenix-primary btn-sm">
+                    <a href="{{ route('negotiations.create', ['operation_id' => $operation->id ?? '']) }}" class="btn btn-phoenix-primary btn-sm">
                         <span class="fas fa-plus me-1"></span>Novo Acordo
                     </a>
                 </div>
                 <div class="card-body p-3">
-                    <div class="d-flex align-items-start mb-3 border-bottom border-200 pb-3">
-                        <span class="fa-solid fa-circle text-info fs-10 mt-1"></span>
-                        <div class="ms-3 flex-1">
-                            <h6 class="mb-1 text-bold">Nenhum acordo ativo</h6>
-                            <p class="text-body-tertiary fs-9 mb-0">Use o botão acima para registrar uma proposta.</p>
+                    @if($operation && $operation->negotiations->count() > 0)
+                        @foreach($operation->negotiations as $neg)
+                            <div class="d-flex align-items-center mb-3 border-bottom border-200 pb-3">
+                                <div class="flex-1">
+                                    <h6 class="mb-1 text-bold">
+                                        <a href="{{ route('negotiations.show', $neg) }}">Acordo #{{ $neg->id }}</a>
+                                        @php
+                                            $statusClass = match($neg->status) {
+                                                'em andamento' => 'text-warning',
+                                                'quitado' => 'text-success',
+                                                'cancelado' => 'text-danger',
+                                                default => 'text-secondary'
+                                            };
+                                        @endphp
+                                        <span class="{{ $statusClass }} fs-10 ms-2">• {{ strtoupper($neg->status) }}</span>
+                                    </h6>
+                                    <p class="text-body-tertiary fs-9 mb-0">
+                                        Valor: R$ {{ number_format($neg->details['valor_proposta'] ?? 0, 2, ',', '.') }} | 
+                                        {{ $neg->created_at->format('d/m/Y') }}
+                                    </p>
+                                </div>
+                                <div class="col-auto">
+                                    <a href="{{ route('negotiations.edit', $neg) }}" class="btn btn-link p-0 text-body-tertiary">
+                                        <span class="fas fa-edit fs-10"></span>
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="d-flex align-items-start mb-3 border-bottom border-200 pb-3">
+                            <span class="fa-solid fa-circle text-info fs-10 mt-1"></span>
+                            <div class="ms-3 flex-1">
+                                <h6 class="mb-1 text-bold">Nenhum acordo ativo</h6>
+                                <p class="text-body-tertiary fs-9 mb-0">Use o botão acima para registrar uma proposta.</p>
+                            </div>
                         </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>

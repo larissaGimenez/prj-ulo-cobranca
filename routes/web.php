@@ -81,6 +81,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
      */
     Route::get('/billings', [BillingController::class, 'index'])->name('billings.index');
     Route::post('/billings/stages', [BillingController::class, 'storeStage'])->name('billings.store_stage');
+    Route::put('/billings/stages/{id}', [BillingController::class, 'updateStage'])->name('billings.update_stage');
+    Route::delete('/billings/stages/{id}', [BillingController::class, 'destroyStage'])->name('billings.destroy_stage');
     Route::get('/billings/{id}', [BillingController::class, 'show'])->name('billings.show');
 
     /**
