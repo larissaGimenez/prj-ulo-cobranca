@@ -7,21 +7,34 @@ use App\Models\TituloContaReceber;
 use App\Models\BillingKanbanStage;
 use App\Models\BillingOperation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Carbon\Carbon;
 
 class BillingController extends Controller
 {
     /**
+     * Sincroniza os cards do Kanban com a base de dados.
+     */
+    public function sync()
+    {
+        \App\Jobs\SyncBillingOperationsJob::dispatch();
+        
+        return redirect()->back()->with('success', 'Processamento iniciado em segundo plano! Os cards serão atualizados em breve.');
+    }
+
+    /**
      * Lista todos os clientes inadimplentes.
      */
     public function index()
     {
+        $syncRunning = \Illuminate\Support\Facades\Cache::has('sync_billing_operations_running');
+
         // Buscamos os estágios com suas operações vinculadas (usando o snapshot metadata)
         $stages = BillingKanbanStage::with(['operations' => function($query) {
             $query->orderBy('updated_at', 'desc');
         }])->orderBy('sort_order', 'asc')->get();
 
-        return view('billings.index', compact('stages'));
+        return view('billings.index', compact('stages', 'syncRunning'));
     }
 
     /**
@@ -96,6 +109,21 @@ class BillingController extends Controller
         // Trazemos a operação vinculada a este cliente (se houver) e suas negociações
         $operation = BillingOperation::with('negotiations')->where('cliente_id_omie', $cliente->cliente_id_omie)->first();
 
-        return view('billings.show', compact('cliente', 'titulos', 'vencidosCount', 'totalDivida', 'operation'));
+        // CÁLCULO DE DIAS EM ATRASO (Mais antigo)
+        $oldestTitulo = $titulos->filter(function ($t) {
+            $vencido = \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc)->isPast();
+            $aberto = !in_array(strtoupper($t->status), ['PAGO', 'LIQUIDADO', 'RECEBIDO']);
+            return $vencido && $aberto;
+        })->sortBy(function($t) {
+            return \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc);
+        })->first();
+
+        $diasAtraso = 0;
+        if ($oldestTitulo) {
+            $dataVenc = \Carbon\Carbon::createFromFormat('d/m/Y', $oldestTitulo->data_venc);
+            $diasAtraso = (int) $dataVenc->diffInDays(\Carbon\Carbon::now());
+        }
+
+        return view('billings.show', compact('cliente', 'titulos', 'vencidosCount', 'totalDivida', 'operation', 'diasAtraso'));
     }
 }

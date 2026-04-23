@@ -60,9 +60,15 @@
                                 </div>
 
                                 {{-- Risco de Crédito --}}
-                                <div class="ps-4">
+                                <div class="px-4 border-end border-300">
                                     <p class="text-body-tertiary fs-10 mb-1 text-uppercase fw-bold">Risco de Crédito</p>
                                     <h1 class="mb-0 text-warning fw-bold">Score: B</h1>
+                                </div>
+
+                                {{-- Dias em Atraso --}}
+                                <div class="ps-4">
+                                    <p class="text-body-tertiary fs-10 mb-1 text-uppercase fw-bold">Dias em Atraso</p>
+                                    <h1 class="mb-0 text-dark fw-bold">{{ $diasAtraso }} <small class="fs-9 fw-normal">dias</small></h1>
                                 </div>
                             </div>
                         </div>

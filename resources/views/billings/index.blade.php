@@ -15,11 +15,34 @@
                 </nav>
                 <h2 class="mb-0 fw-bolder">Esteira de Cobrança</h2>
             </div>
-            <div class="col-auto">
+            <div class="col-auto d-flex gap-2">
+                <form action="{{ route('billings.sync') }}" method="POST" id="reprocessForm">
+                    @csrf
+                    <button type="submit" class="btn btn-phoenix-primary px-4 shadow-none" id="btnReprocess" {{ $syncRunning ? 'disabled' : '' }}>
+                        <span class="fas fa-sync me-2 {{ $syncRunning ? 'fa-spin' : '' }}" id="iconReprocess"></span>
+                        <span class="spinner-border spinner-border-sm me-2 d-none" role="status" id="spinnerReprocess"></span>
+                        <span id="textReprocess">{{ $syncRunning ? 'Sincronizando...' : 'Reprocessar Cards' }}</span>
+                    </button>
+                </form>
                 <button class="btn btn-primary px-4 shadow-none" data-bs-toggle="modal" data-bs-target="#addStageModal">
                     <span class="fas fa-plus me-2"></span>Nova Etapa
                 </button>
             </div>
+        </div>
+
+        @if($syncRunning)
+            <div class="alert alert-subtle-primary d-flex align-items-center mb-3" role="alert">
+                <span class="fas fa-info-circle me-2"></span>
+                <div class="flex-1">A sincronização está sendo executada em segundo plano. Os cards serão atualizados automaticamente em alguns instantes.</div>
+                <button class="btn btn-link p-0 ms-3" type="button" onclick="location.reload();">
+                    <span class="fas fa-sync-alt me-1"></span>Atualizar Tela
+                </button>
+            </div>
+        @endif
+
+        {{-- Barra de Progresso (Simulada para o trigger) --}}
+        <div class="progress mb-3 d-none" id="reprocessProgress" style="height: 10px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
 
         {{-- Área do Board --}}
@@ -190,6 +213,34 @@
 
 @push('scripts')
     <script>
+        document.getElementById('reprocessForm')?.addEventListener('submit', function(e) {
+            const btn = document.getElementById('btnReprocess');
+            const icon = document.getElementById('iconReprocess');
+            const spinner = document.getElementById('spinnerReprocess');
+            const text = document.getElementById('textReprocess');
+            const progressContainer = document.getElementById('reprocessProgress');
+            const progressBar = progressContainer.querySelector('.progress-bar');
+
+            // UI State
+            btn.classList.add('disabled');
+            icon.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            text.innerText = 'Sincronizando...';
+            progressContainer.classList.remove('d-none');
+
+            // Simulação de progresso (já que é um post síncrono que recarrega a página)
+            let width = 0;
+            const interval = setInterval(function() {
+                if (width >= 95) {
+                    clearInterval(interval);
+                } else {
+                    width += 5;
+                    progressBar.style.width = width + '%';
+                    progressBar.setAttribute('aria-valuenow', width);
+                }
+            }, 200);
+        });
+
         function toggleColumn(id) {
             const col = document.getElementById(`column-${id}`);
             const normalHeader = col.querySelector('.column-header');
