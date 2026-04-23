@@ -17,6 +17,7 @@ use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\NegotiationController;
+use App\Http\Controllers\DashboardController;
 
 
 /*
@@ -51,7 +52,7 @@ Route::prefix('set-password')->name('password.')->group(function () {
 */
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::view('/dashboard', 'dashboard')->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Gestão de Perfil
     Route::prefix('profile')->name('profile.')->group(function () {
