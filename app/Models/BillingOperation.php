@@ -16,11 +16,13 @@ class BillingOperation extends Model
     protected $fillable = [
         'cliente_id_omie',
         'billing_kanban_stage_id',
-        'metadata'
+        'metadata',
+        'checklist_data'
     ];
 
     protected $casts = [
         'metadata' => 'array',
+        'checklist_data' => 'array',
     ];
 
     /**

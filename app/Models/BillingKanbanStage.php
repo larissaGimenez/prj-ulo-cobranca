@@ -14,7 +14,12 @@ class BillingKanbanStage extends Model
 
     protected $fillable = [
         'name',
-        'sort_order'
+        'sort_order',
+        'checklist'
+    ];
+
+    protected $casts = [
+        'checklist' => 'array'
     ];
 
     /**

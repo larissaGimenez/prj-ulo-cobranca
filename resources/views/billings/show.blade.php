@@ -199,8 +199,97 @@
             </div>
         </div>
 
+        {{-- HISTÓRICO DE CHECKLIST --}}
+        <div class="col-12 mb-4">
+            <div class="card shadow-none border border-300">
+                <div class="card-header bg-body-tertiary py-3 px-4 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-uppercase fs-10 text-body-highlight fw-bold">
+                        <span class="fas fa-check-double me-2 text-success"></span>
+                        Checklist de Evolução da Cobrança
+                    </h6>
+                    <button class="btn btn-link btn-sm p-0 fs-10 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#addCustomTaskCollapse">
+                        <i class="fas fa-plus-circle me-1"></i>ADICIONAR TAREFA
+                    </button>
+                </div>
+                
+                <div class="collapse" id="addCustomTaskCollapse">
+                    <div class="bg-body-highlight border-bottom border-translucent p-4">
+                        <form action="{{ route('billings.add_checklist_item', $operation->id) }}" method="POST" class="row g-3 align-items-end">
+                            @csrf
+                            <div class="col-md-6">
+                                <label class="form-label fs-10 fw-bold text-uppercase">Descrição da Tarefa</label>
+                                <input type="text" name="text" class="form-control" placeholder="Ex: Aguardando retorno do sócio..." required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fs-10 fw-bold text-uppercase">Vincular à Etapa</label>
+                                <select name="stage_id" class="form-select" required>
+                                    @foreach($stages as $stg)
+                                        <option value="{{ $stg->id }}" {{ $operation->billing_kanban_stage_id == $stg->id ? 'selected' : '' }}>{{ $stg->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-none">ADICIONAR</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm fs-9 mb-0">
+                            <thead>
+                                <tr class="bg-body-emphasis">
+                                    <th class="ps-3" style="width: 70%">Tarefa</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if($operation && !empty($operation->checklist_data))
+                                    @foreach($operation->checklist_data as $index => $item)
+                                        <tr class="checklist-row-item">
+                                            <td class="ps-3 py-3 align-middle">
+                                                <div class="d-flex align-items-center">
+                                                    <span class="badge badge-phoenix fs-11 me-2 {{ $item['completed'] ? 'badge-phoenix-success' : 'badge-phoenix-secondary' }}">
+                                                        <i class="fas {{ $item['completed'] ? 'fa-check' : 'fa-clock' }}"></i>
+                                                    </span>
+                                                    <span class="{{ $item['completed'] ? 'text-decoration-line-through text-body-tertiary' : 'text-body-highlight' }} fs-9 fw-bold">
+                                                        {{ $item['text'] }}
+                                                        @if($item['is_custom'] ?? false)
+                                                            <small class="badge badge-phoenix badge-phoenix-info ms-2 fs-11">PERSONALIZADO</small>
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <div class="d-flex justify-content-center gap-2">
+                                                    @if($item['completed'])
+                                                        <span class="badge badge-phoenix badge-phoenix-success fs-10">CONCLUÍDO</span>
+                                                    @else
+                                                        <span class="badge badge-phoenix badge-phoenix-warning fs-10">PENDENTE</span>
+                                                    @endif
+                                                    
+                                                    <button class="btn btn-link p-0 text-danger" type="button" onclick="removeItemFromChecklist({{ $index }}, this)">
+                                                        <i class="fas fa-trash-alt fs-11"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @else
+                                    <tr>
+                                        <td colspan="2" class="text-center py-4 text-body-tertiary italic">Nenhum checklist registrado para esta operação.</td>
+                                    </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- COMENTÁRIOS --}}
-        <div class="col-12">
+        <div class="col-12 mb-4">
             <div class="card shadow-none border border-300">
                 <div class="card-header bg-body-tertiary py-2 px-3">
                     <h6 class="mb-0 text-uppercase fs-10 text-body-highlight fw-bold">
@@ -229,4 +318,49 @@
             </div>
         </div>
     </div>
+
+    {{-- Toast para feedback visual --}}
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+        <div id="syncToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="syncToastMessage">Alteração salva!</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
 @endsection
+
+@push('scripts')
+    <script>
+        function removeItemFromChecklist(index, btn) {
+            if (!confirm('Tem certeza que deseja remover este item do checklist deste cliente?')) return;
+
+            fetch(`/billings/operations/{{ $operation->id }}/checklist`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    item_index: index
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message);
+                    btn.closest('.checklist-row-item').remove();
+                }
+            })
+            .catch(error => console.error('Erro ao remover item:', error));
+        }
+
+        function showToast(message) {
+            const toastEl = document.getElementById('syncToast');
+            const toastMsg = document.getElementById('syncToastMessage');
+            toastMsg.innerText = message;
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+    </script>
+@endpush

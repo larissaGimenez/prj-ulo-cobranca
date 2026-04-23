@@ -77,11 +77,23 @@ class SyncBillingOperationsJob implements ShouldQueue
                 $existingOperation = BillingOperation::where('cliente_id_omie', $cliente->cliente_id_omie)->first();
                 $stageId = $existingOperation ? $existingOperation->billing_kanban_stage_id : $stageInadimplencia->id;
 
+                // Inicializar checklist se estiver vazio
+                $checklistData = $existingOperation ? $existingOperation->checklist_data : null;
+                if (empty($checklistData)) {
+                    $targetStage = $existingOperation ? $existingOperation->stage : $stageInadimplencia;
+                    if ($targetStage && !empty($targetStage->checklist)) {
+                        $checklistData = collect($targetStage->checklist)->map(function($item) use ($targetStage) {
+                            return ['text' => $item, 'completed' => false, 'stage_id' => $targetStage->id];
+                        })->toArray();
+                    }
+                }
+
                 BillingOperation::updateOrCreate(
                     ['cliente_id_omie' => $cliente->cliente_id_omie],
                     [
                         'billing_kanban_stage_id' => $stageId,
-                        'metadata' => $metadata
+                        'metadata' => $metadata,
+                        'checklist_data' => $checklistData
                     ]
                 );
             }

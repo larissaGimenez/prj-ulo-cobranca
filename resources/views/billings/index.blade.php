@@ -40,6 +40,16 @@
             </div>
         @endif
 
+        {{-- Notificações Flutuantes --}}
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+            <div id="syncToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body" id="syncToastMessage">Alteração salva!</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
         {{-- Barra de Progresso (Simulada para o trigger) --}}
         <div class="progress mb-3 d-none" id="reprocessProgress" style="height: 10px;">
             <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
@@ -95,37 +105,55 @@
                         {{-- Itens (Cards de Cobrança - Sem Drag and Drop) --}}
                         <div class="kanban-items-container flex-1 overflow-y-auto scrollbar p-2">
                             @forelse($stage->operations as $operation)
-                                            @php
-                                                $data = $operation->metadata;
-                                                $cliente = $data['cliente'] ?? [];
-                                                $empresa = $cliente['empresa'] ?? 'N/A';
-                                                $totalDivida = $data['total_divida'] ?? 0;
-                                                $vencidosCount = $data['vencidos_count'] ?? 0;
-                                            @endphp
-                                <div
-                                                class="card mb-2 shadow-none border border-translucent hover-card-style transition-base bg-white">
-                                                <div class="card-body p-2 px-3">
-                                                    <h6 class="mb-1 fw-bold text-body-highlight fs-10 text-truncate">
-                                                        {{ $cliente['nome'] ?? 'Cliente' }}</h6>
-                                                    <p class="text-primary fw-bold fs-11 mb-2 text-truncate">
-                                                        <i class="fas fa-building me-1"></i>{{ Str::limit($empresa, 25) }}
-                                                    </p>
-                                                    <div class="bg-body-highlight rounded-2 p-1 px-2 mb-2 border border-translucent">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <small class="text-body-tertiary fw-bold fs-11 uppercase">Dívida</small>
-                                                            <span class="text-danger fw-bolder fs-10">R$
-                                                                {{ number_format($totalDivida, 2, ',', '.') }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-flex align-items-center justify-content-between">
-                                                        <span class="text-body-tertiary fs-11"><i
-                                                                class="fas fa-file-invoice me-1"></i>{{ $vencidosCount }} títulos</span>
-                                                        <a href="{{ route('billings.show', $cliente['id'] ?? 0) }}"
-                                                            class="btn btn-sm btn-link p-0 text-primary fw-bold fs-11">GERENCIAR <i
-                                                                class="fas fa-chevron-right ms-1"></i></a>
-                                                    </div>
-                                                </div>
+                                @php
+                                    $data = $operation->metadata;
+                                    $cliente = $data['cliente'] ?? [];
+                                    $empresa = $cliente['empresa'] ?? 'N/A';
+                                    $totalDivida = $data['total_divida'] ?? 0;
+                                    $vencidosCount = $data['vencidos_count'] ?? 0;
+                                    
+                                    $cardChecklist = $operation->checklist_data;
+                                    if (empty($cardChecklist) && !empty($stage->checklist)) {
+                                        $cardChecklist = collect($stage->checklist)->map(fn($item) => ['text' => $item, 'completed' => false, 'stage_id' => $stage->id])->toArray();
+                                    }
+                                    
+                                    // Filtra checklist para o badge (apenas atual)
+                                    $currentStageItems = collect($cardChecklist)->where('stage_id', $stage->id);
+                                @endphp
+                                <div class="card mb-2 shadow-none border border-translucent hover-card-style transition-base bg-white cursor-pointer" 
+                                     onclick="openCardModal({{ $operation->id }}, @js($data), @js($cardChecklist ?? []), {{ $stage->id }})">
+                                    <div class="card-body p-2 px-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <h6 class="mb-0 fw-bold text-body-highlight fs-10 text-truncate flex-1">
+                                                {{ $cliente['nome'] ?? 'Cliente' }}</h6>
+                                            @if($currentStageItems->isNotEmpty())
+                                                @php
+                                                    $completedCount = $currentStageItems->where('completed', true)->count();
+                                                    $totalCount = $currentStageItems->count();
+                                                    $percent = $totalCount > 0 ? ($completedCount / $totalCount) * 100 : 0;
+                                                @endphp
+                                                <span class="badge badge-phoenix fs-11 {{ $percent == 100 ? 'badge-phoenix-success' : 'badge-phoenix-primary' }}" title="Progresso nesta etapa">
+                                                    <i class="fas fa-tasks me-1"></i>{{ $completedCount }}/{{ $totalCount }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <p class="text-primary fw-bold fs-11 mb-2 text-truncate">
+                                            <i class="fas fa-building me-1"></i>{{ Str::limit($empresa, 25) }}
+                                        </p>
+                                        <div class="bg-body-highlight rounded-2 p-1 px-2 mb-2 border border-translucent">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-body-tertiary fw-bold fs-11 uppercase">Dívida</small>
+                                                <span class="text-danger fw-bolder fs-10">R$
+                                                    {{ number_format($totalDivida, 2, ',', '.') }}</span>
                                             </div>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span class="text-body-tertiary fs-11"><i
+                                                    class="fas fa-file-invoice me-1"></i>{{ $vencidosCount }} títulos</span>
+                                            <span class="text-primary fw-bold fs-11 uppercase">VER MAIS <i class="fas fa-eye ms-1"></i></span>
+                                        </div>
+                                    </div>
+                                </div>
                             @empty
                                 <div class="text-center py-5 opacity-25 empty-info">
                                     <i class="fas fa-folder-open fs-3 mb-2 d-block"></i>
@@ -164,10 +192,20 @@
                     </div>
                     <div class="modal-body px-4 pb-4 pt-0">
                         <div class="mb-3">
-                            <label class="form-label fw-bold text-body-highlight fs-10" for="stageName">Nome da
-                                Etapa</label>
-                            <input class="form-control shadow-none" id="stageName" name="name" type="text"
-                                placeholder="Ex: Em Negociação" required />
+                            <label class="form-label fw-bold text-body-highlight fs-10" for="stageName">Nome da Etapa</label>
+                            <input class="form-control shadow-none" id="stageName" name="name" type="text" placeholder="Ex: Em Negociação" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-body-highlight fs-10 d-flex justify-content-between align-items-center">
+                                Checklist Automático
+                                <button type="button" class="btn btn-link p-0 fs-11" onclick="addChecklistItem('addStageChecklistContainer')">
+                                    <i class="fas fa-plus-circle me-1"></i>Adicionar Item
+                                </button>
+                            </label>
+                            <div id="addStageChecklistContainer" class="checklist-items-builder">
+                                {{-- Inputs dinâmicos aqui --}}
+                            </div>
+                            <small class="text-body-tertiary fs-11 mt-1 d-block">Estes itens serão atribuídos automaticamente a novos cards nesta etapa.</small>
                         </div>
                     </div>
                     <div class="modal-footer border-0 px-4 pb-4">
@@ -199,6 +237,27 @@
                                 <label class="form-label fw-bold text-body-highlight fs-10" for="stageName-{{ $stage->id }}">Nome da Etapa</label>
                                 <input class="form-control shadow-none" id="stageName-{{ $stage->id }}" name="name" type="text" value="{{ $stage->name }}" required />
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-body-highlight fs-10 d-flex justify-content-between align-items-center">
+                                    Checklist Automático
+                                    <button type="button" class="btn btn-link p-0 fs-11" onclick="addChecklistItem('editStageChecklistContainer-{{ $stage->id }}')">
+                                        <i class="fas fa-plus-circle me-1"></i>Adicionar Item
+                                    </button>
+                                </label>
+                                <div id="editStageChecklistContainer-{{ $stage->id }}" class="checklist-items-builder">
+                                    @if(is_array($stage->checklist))
+                                        @foreach($stage->checklist as $item)
+                                            <div class="input-group input-group-sm mb-2 checklist-row">
+                                                <input type="text" name="checklist[]" class="form-control shadow-none" value="{{ $item }}">
+                                                <button class="btn btn-phoenix-danger px-2 border-translucent" type="button" onclick="this.closest('.checklist-row').remove()">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        @endforeach
+                                    @endif
+                                </div>
+                                <small class="text-body-tertiary fs-11 mt-1 d-block"><i class="fas fa-info-circle me-1"></i>Remover itens aqui impede novas atribuições, mas mantém nos cards que já possuem o item.</small>
+                            </div>
                         </div>
                         <div class="modal-footer border-0 px-4 pb-4">
                             <button class="btn btn-link text-body px-3 shadow-none" type="button" data-bs-dismiss="modal">Cancelar</button>
@@ -209,6 +268,62 @@
             </div>
         </div>
     @endforeach
+
+    {{-- Modal Detalhes do Card (Modal Rápido) --}}
+    <div class="modal fade" id="cardModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border border-translucent shadow-lg text-start">
+                <div class="modal-header px-4 border-bottom border-translucent">
+                    <h5 class="modal-title" id="cardModalLabel">Detalhes da Operação</h5>
+                    <button class="btn p-1" type="button" data-bs-dismiss="modal">
+                        <span class="fas fa-times fs-9"></span>
+                    </button>
+                </div>
+                <div class="modal-body px-4 py-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="avatar avatar-3xl rounded-circle border border-primary-100 me-3">
+                            <div class="avatar-name rounded-circle text-primary bg-primary-subtle fs-7">
+                                <span id="cardAvatar">--</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="mb-1 fw-bolder text-body-highlight" id="cardClienteNome">Nome do Cliente</h4>
+                            <p class="text-primary fw-bold mb-0 fs-9"><i class="fas fa-building me-1"></i><span id="cardEmpresa">Empresa</span></p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="bg-body-highlight rounded-3 p-3 border border-translucent h-100">
+                                <p class="text-body-tertiary fs-11 fw-bold text-uppercase mb-1">Dívida Total</p>
+                                <h3 class="text-danger fw-bold mb-0" id="cardTotalDivida">R$ 0,00</h3>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-body-highlight rounded-3 p-3 border border-translucent h-100">
+                                <p class="text-body-tertiary fs-11 fw-bold text-uppercase mb-1">Títulos Vencidos</p>
+                                <h3 class="text-dark fw-bold mb-0" id="cardVencidosCount">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="mb-3 fw-bold text-uppercase fs-10 tracking-wider"><i class="fas fa-check-double me-2 text-success"></i>Checklist de Evolução</h6>
+                        <div id="cardChecklistContainer" class="list-group list-group-flush border rounded-3 overflow-hidden">
+                            {{-- Gerado via JS --}}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="#" id="cardDetailLink" class="btn btn-primary shadow-none fw-bold">
+                            <i class="fas fa-external-link-alt me-2"></i>ACESSAR FICHA COMPLETA
+                        </a>
+                        <button class="btn btn-link text-body-tertiary shadow-none fs-9" type="button" data-bs-dismiss="modal">FECHAR</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -240,6 +355,128 @@
                 }
             }, 200);
         });
+
+        let currentOperationId = null;
+
+        function openCardModal(operationId, metadata, checklist, currentStageId) {
+            currentOperationId = operationId;
+            const cliente = metadata.cliente || {};
+            
+            // Preencher informações básicas
+            document.getElementById('cardClienteNome').innerText = cliente.nome || 'N/A';
+            document.getElementById('cardEmpresa').innerText = cliente.empresa || 'Não informada';
+            document.getElementById('cardAvatar').innerText = (cliente.nome || '--').substring(0, 2).toUpperCase();
+            document.getElementById('cardTotalDivida').innerText = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metadata.total_divida || 0);
+            document.getElementById('cardVencidosCount').innerText = metadata.vencidos_count || 0;
+            document.getElementById('cardDetailLink').href = `/billings/${cliente.id || 0}`;
+
+            // Preencher Checklist (Filtrado por etapa atual)
+            const container = document.getElementById('cardChecklistContainer');
+            container.innerHTML = '';
+
+            if (checklist && checklist.length > 0) {
+                // Filtramos e mantemos o índice original para o salvamento
+                const currentItems = checklist
+                    .map((item, index) => ({ ...item, originalIndex: index }))
+                    .filter(item => !item.stage_id || item.stage_id == currentStageId);
+
+                if (currentItems.length > 0) {
+                    currentItems.forEach((item) => {
+                        const div = document.createElement('div');
+                        div.className = 'list-group-item d-flex align-items-center py-2 px-3 border-translucent checklist-row-item';
+                        div.innerHTML = `
+                            <div class="form-check mb-0 flex-1">
+                                <input class="form-check-input cursor-pointer" type="checkbox" id="chk-${item.originalIndex}" ${item.completed ? 'checked' : ''} onchange="toggleChecklistItem(${item.originalIndex}, this.checked)">
+                                <label class="form-check-label ms-2 fs-9 cursor-pointer ${item.completed ? 'text-decoration-line-through text-body-tertiary' : 'text-body-highlight'}" for="chk-${item.originalIndex}">
+                                    ${item.text}
+                                    ${item.is_custom ? '<span class="badge badge-phoenix badge-phoenix-info ms-1 fs-11">PERS.</span>' : ''}
+                                </label>
+                            </div>
+                            <button class="btn btn-link p-0 text-danger-300 hover-text-danger ms-2" onclick="removeItemFromChecklist(${item.originalIndex}, this)">
+                                <i class="fas fa-trash-alt fs-11"></i>
+                            </button>
+                        `;
+                        container.appendChild(div);
+                    });
+                } else {
+                    container.innerHTML = '<div class="list-group-item text-center py-3 text-body-tertiary fs-10 italic">Nenhuma tarefa pendente para esta etapa.</div>';
+                }
+            } else {
+                container.innerHTML = '<div class="list-group-item text-center py-3 text-body-tertiary fs-10 italic">Nenhuma tarefa pendente para esta etapa.</div>';
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('cardModal'));
+            modal.show();
+        }
+
+        function toggleChecklistItem(index, completed) {
+            fetch(`/billings/operations/${currentOperationId}/checklist`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    item_index: index,
+                    completed: completed
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message);
+                    if (data.moved) {
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                }
+            })
+            .catch(error => console.error('Erro ao atualizar checklist:', error));
+        }
+
+        function showToast(message) {
+            const toastEl = document.getElementById('syncToast');
+            const toastMsg = document.getElementById('syncToastMessage');
+            toastMsg.innerText = message;
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+
+        function addChecklistItem(containerId) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = 'input-group input-group-sm mb-2 checklist-row';
+            div.innerHTML = `
+                <input type="text" name="checklist[]" class="form-control shadow-none" placeholder="Nova tarefa...">
+                <button class="btn btn-phoenix-danger px-2 border-translucent" type="button" onclick="this.closest('.checklist-row').remove()">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+            container.appendChild(div);
+            div.querySelector('input').focus();
+        }
+
+        function removeItemFromChecklist(index, btn) {
+            if (!confirm('Tem certeza que deseja remover este item do checklist deste cliente?')) return;
+
+            fetch(`/billings/operations/${currentOperationId}/checklist`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    item_index: index
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message);
+                    btn.closest('.checklist-row-item').remove();
+                }
+            })
+            .catch(error => console.error('Erro ao remover item:', error));
+        }
 
         function toggleColumn(id) {
             const col = document.getElementById(`column-${id}`);
