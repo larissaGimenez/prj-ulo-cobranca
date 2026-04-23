@@ -44,13 +44,13 @@ class BillingController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'checklist' => 'nullable|string'
+            'checklist' => 'nullable|array'
         ]);
 
         $lastOrder = BillingKanbanStage::max('sort_order') ?? -1;
 
-        // Converter checklist string (uma por linha) para array
-        $checklist = $request->checklist ? array_filter(array_map('trim', explode("\n", $request->checklist))) : [];
+        // O checklist agora vem como array dos inputs dinâmicos
+        $checklist = array_filter(array_map('trim', $request->checklist ?? []));
 
         BillingKanbanStage::create([
             'name' => $request->name,
@@ -217,49 +217,47 @@ class BillingController extends Controller
     }
 
     /**
-     * Exibe os detalhes de um cliente específico e seus títulos.
+     * Exibe os detalhes de um cliente específico e seus títulos com alta performance.
      */
     public function show($id)
     {
         $cliente = ClienteInadimplente::findOrFail($id);
+        $codCliente = (string) $cliente->cliente_id_omie;
 
-        // Trazemos TODOS os 17 títulos
-        $titulos = TituloContaReceber::whereRaw('"cod_cliente" = ?', [(string) $cliente->cliente_id_omie])
-            ->orderByRaw("to_date(data_venc, 'DD/MM/YYYY') ASC")
+        // SQL Otimizado para cálculos financeiros (Executa tudo em uma única query rápida no Banco)
+        // Nota: 'valor' é string no banco (ex: 1.250,00), precisamos converter para numeric no SQL
+        $metrics = TituloContaReceber::whereRaw('"cod_cliente" = ?', [$codCliente])
+            ->selectRaw("
+                SUM(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE 
+                    AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
+                    THEN 
+                        CASE WHEN valor LIKE '%,%' 
+                             THEN CAST(REPLACE(REPLACE(valor, '.', ''), ',', '.') AS NUMERIC)
+                             ELSE CAST(valor AS NUMERIC)
+                        END
+                    ELSE 0 END) as total_divida,
+                COUNT(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE 
+                    AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
+                    THEN 1 END) as vencidos_count,
+                MIN(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE 
+                    AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
+                    THEN to_date(data_venc, 'DD/MM/YYYY') END) as oldest_venc
+            ")
+            ->first();
+
+        $totalDivida = $metrics->total_divida ?? 0;
+        $vencidosCount = $metrics->vencidos_count ?? 0;
+        $diasAtraso = $metrics->oldest_venc ? (int) Carbon::parse($metrics->oldest_venc)->diffInDays(Carbon::now()) : 0;
+
+        // Títulos: Trazemos apenas o necessário para a listagem (limite opcional se houver milhares)
+        $titulos = TituloContaReceber::whereRaw('"cod_cliente" = ?', [$codCliente])
+            ->orderByRaw("to_date(data_venc, 'DD/MM/YYYY') DESC") // Mais recentes primeiro geralmente é melhor
             ->get();
 
-        // SOMA FINANCEIRA: Apenas o que é dívida real (Vencido e Não Pago)
-        $totalDivida = $titulos->filter(function ($t) {
-            $vencido = \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc)->isPast();
-            $aberto = !in_array(strtoupper($t->status), ['PAGO', 'LIQUIDADO', 'RECEBIDO']);
-            return $vencido && $aberto;
-        })->sum('valor_float');
-
-        // CONTADOR DE BADGE: Apenas os atrasados
-        $vencidosCount = $titulos->filter(function ($t) {
-            $vencido = \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc)->isPast();
-            $aberto = !in_array(strtoupper($t->status), ['PAGO', 'LIQUIDADO', 'RECEBIDO']);
-            return $vencido && $aberto;
-        })->count();
-
-        // Trazemos a operação vinculada a este cliente (se houver) e suas negociações
+        // Trazemos a operação e estágios para o modal/checklist
         $operation = BillingOperation::with('negotiations')->where('cliente_id_omie', $cliente->cliente_id_omie)->first();
+        $stages = BillingKanbanStage::orderBy('sort_order', 'asc')->get();
 
-        // CÁLCULO DE DIAS EM ATRASO (Mais antigo)
-        $oldestTitulo = $titulos->filter(function ($t) {
-            $vencido = \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc)->isPast();
-            $aberto = !in_array(strtoupper($t->status), ['PAGO', 'LIQUIDADO', 'RECEBIDO']);
-            return $vencido && $aberto;
-        })->sortBy(function($t) {
-            return \Carbon\Carbon::createFromFormat('d/m/Y', $t->data_venc);
-        })->first();
-
-        $diasAtraso = 0;
-        if ($oldestTitulo) {
-            $dataVenc = \Carbon\Carbon::createFromFormat('d/m/Y', $oldestTitulo->data_venc);
-            $diasAtraso = (int) $dataVenc->diffInDays(\Carbon\Carbon::now());
-        }
-
-        return view('billings.show', compact('cliente', 'titulos', 'vencidosCount', 'totalDivida', 'operation', 'diasAtraso'));
+        return view('billings.show', compact('cliente', 'titulos', 'vencidosCount', 'totalDivida', 'operation', 'diasAtraso', 'stages'));
     }
 }
