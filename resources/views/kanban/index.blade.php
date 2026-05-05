@@ -108,6 +108,7 @@
     @include('kanban.partials.add_task_modal')
 
     @push('scripts')
+        <script src="{{ asset('vendors/sortablejs/Sortable.min.js') }}"></script>
         <script>
             function toggleColumn(id) {
                 const col = document.getElementById(`column-${id}`);

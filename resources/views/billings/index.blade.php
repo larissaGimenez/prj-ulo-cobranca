@@ -356,6 +356,7 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('vendors/sortablejs/Sortable.min.js') }}"></script>
     <script>
         document.getElementById('reprocessForm')?.addEventListener('submit', function(e) {
             const btn = document.getElementById('btnReprocess');

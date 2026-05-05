@@ -25,9 +25,7 @@ use App\Http\Controllers\DashboardController;
 | Public Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::redirect('/', '/login');
 
 /*
 |--------------------------------------------------------------------------
