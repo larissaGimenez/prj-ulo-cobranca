@@ -98,6 +98,27 @@ class BillingController extends Controller
         return redirect()->back()->with('success', 'Etapa atualizada e novos itens sincronizados com os cards!');
     }
 
+    public function addInteraction(Request $request, $id)
+    {
+        $request->validate([
+            'message' => 'required|string'
+        ]);
+
+        $operation = BillingOperation::findOrFail($id);
+        $interactions = $operation->interactions ?? [];
+
+        // Adiciona a nova interação no início do array (mais recente primeiro)
+        array_unshift($interactions, [
+            'message' => $request->message,
+            'user_name' => auth()->user()->name ?? 'Sistema',
+            'created_at' => now()->toDateTimeString(),
+        ]);
+
+        $operation->update(['interactions' => $interactions]);
+
+        return redirect()->back()->with('success', 'Interação registrada com sucesso!');
+    }
+
     /**
      * Adiciona um item individual ao checklist de um card.
      */

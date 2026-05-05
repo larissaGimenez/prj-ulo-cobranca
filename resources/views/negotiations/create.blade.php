@@ -30,7 +30,7 @@
                     <label for="operation_id" class="ms-3">Operação</label>
                 </div>
 
-                <div class="form-floating col-4">
+                <div class="form-floating col-6">
                     <select name="details[tipo_acordo]" id="tipo_acordo" class="form-select" aria-label="Floating label select example">
                         <option value="">Selecione o tipo de acordo</option>
                         <option value="À vista">À Vista</option>
@@ -49,7 +49,7 @@
                 <label for="valor_proposta" class="ms-3">Valor Proposta</label>
             </div>
 
-            <div class="form-floating col-4">
+            <div class="form-floating col-6">
                 <input class="form-control text-end money-mask" name="details[valor_entrada]" id="valor_entrada" type="text" placeholder="Valor Entrada" />
                 <label for="valor_entrada" class="ms-3">Valor Entrada</label>
             </div>
@@ -67,7 +67,7 @@
                 <label for="status" class="ms-3">Status</label>
             </div>
 
-            <div class="form-floating col-4">
+            <div class="form-floating col-6">
                 <input class="form-control" name="details[numero_parcelas]" id="numero_parcelas" type="number" min="1" placeholder="Número de Parcelas" />
                 <label for="numero_parcelas" class="ms-3">Número de Parcelas</label>
             </div>
@@ -79,7 +79,7 @@
         </div>
 
         <div class="row mb-3">
-            <div class="form-floating col-10">
+            <div class="form-floating col-12">
                 <textarea class="form-control" name="details[observacoes]" placeholder="Descrição da negociação" id="observacoes" style="height: 100px"></textarea>
                 <label for="observacoes" class="ms-3">Observações/Detalhes</label>
             </div>

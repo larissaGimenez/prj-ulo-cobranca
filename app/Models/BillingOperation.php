@@ -18,12 +18,14 @@ class BillingOperation extends Model
         'billing_kanban_stage_id',
         'metadata',
         'checklist_data',
+        'interactions',
         'data_entrada_etapa'
     ];
  
     protected $casts = [
         'metadata' => 'array',
         'checklist_data' => 'array',
+        'interactions' => 'array',
         'data_entrada_etapa' => 'datetime',
     ];
 

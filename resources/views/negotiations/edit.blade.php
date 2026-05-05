@@ -29,7 +29,7 @@
                 <label for="operation_id" class="ms-3">Operação</label>
             </div>
 
-            <div class="form-floating col-4">
+            <div class="form-floating col-6">
                 <select name="details[tipo_acordo]" id="tipo_acordo" class="form-select" aria-label="Floating label select example">
                     <option value="">Selecione o tipo de acordo</option>
                     <option value="À vista" {{ ($negotiation->details['tipo_acordo'] ?? '') == 'À vista' ? 'selected' : '' }}>À Vista</option>
@@ -99,7 +99,7 @@
             </div>
         </div>
 
-        <div class="col-12 d-flex justify-content-end">
+        <div class="col-12 mb-4 d-flex justify-content-end">
             <a href="{{ route('negotiations.index') }}" class="btn btn-phoenix-secondary me-2">
                 <span class="fas fa-chevron-left me-2"></span>Voltar
             </a>

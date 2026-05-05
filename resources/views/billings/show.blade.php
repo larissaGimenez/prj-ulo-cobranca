@@ -6,6 +6,20 @@
             max-height: 400px;
             overflow-y: auto;
         }
+
+        .animated-pulse {
+            animation: pulse-blue 2s infinite;
+        }
+
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(56, 116, 255, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(56, 116, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 116, 255, 0); }
+        }
+
+        .bg-current-stage {
+            background-color: rgba(56, 116, 255, 0.03) !important;
+        }
     </style>
 
     <nav class="mb-3" aria-label="breadcrumb">
@@ -238,57 +252,98 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-sm fs-9 mb-0">
-                            <thead>
-                                <tr class="bg-body-emphasis">
-                                    <th class="ps-3" style="width: 70%">Tarefa</th>
-                                    <th class="text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if($operation && !empty($operation->checklist_data))
-                                    @foreach($operation->checklist_data as $index => $item)
-                                        <tr class="checklist-row-item">
-                                            <td class="ps-3 py-3 align-middle">
+                            @php
+                                // Mapeamos os itens mantendo o índice original para as ações de excluir/completar
+                                $itemsWithIndex = collect($operation->checklist_data ?? [])->map(function($item, $index) {
+                                    $item['original_index'] = $index;
+                                    return $item;
+                                });
+                                
+                                $currentStageId = $operation->billing_kanban_stage_id;
+
+                                // Agrupamos e ordenamos para que a etapa atual fique sempre no topo
+                                $groupedChecklist = $itemsWithIndex->groupBy('stage_id')->sortByDesc(function($items, $stageId) use ($currentStageId) {
+                                    return (int)$stageId === (int)$currentStageId;
+                                });
+                            @endphp
+
+                            @forelse($groupedChecklist as $stageId => $items)
+                                @php
+                                    $stage = $stages->firstWhere('id', $stageId);
+                                    $isCurrentStage = $stageId == $currentStageId;
+                                @endphp
+                                
+                                <thead class="bg-body-highlight border-top border-translucent">
+                                    <tr>
+                                        <th colspan="2" class="ps-3 py-2">
+                                            <div class="d-flex align-items-center">
+                                                <span class="fas fa-layer-group me-2 text-body-tertiary"></span>
+                                                <span class="text-uppercase fw-bolder fs-10 text-body-highlight">
+                                                    Etapa: {{ $stage->name ?? 'Personalizado / Outros' }}
+                                                </span>
+                                                @if($isCurrentStage)
+                                                    <span class="badge badge-phoenix badge-phoenix-primary ms-2 fs-11 animated-pulse">
+                                                        <i class="fas fa-location-dot me-1"></i>ETAPA ATUAL
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($items as $item)
+                                        <tr class="checklist-row-item {{ $isCurrentStage ? 'bg-current-stage' : '' }}">
+                                            <td class="ps-4 py-3 align-middle" style="width: 75%">
                                                 <div class="d-flex align-items-center">
-                                                    <span class="badge badge-phoenix fs-11 me-2 {{ $item['completed'] ? 'badge-phoenix-success' : 'badge-phoenix-secondary' }}">
-                                                        <i class="fas {{ $item['completed'] ? 'fa-check' : 'fa-clock' }}"></i>
-                                                    </span>
-                                                    <span class="{{ $item['completed'] ? 'text-decoration-line-through text-body-tertiary' : 'text-body-highlight' }} fs-9 fw-bold">
-                                                        {{ $item['text'] }}
+                                                    <div class="form-check mb-0">
+                                                        <input class="form-check-input cursor-pointer shadow-none" 
+                                                               type="checkbox" 
+                                                               style="width: 1.1rem; height: 1.1rem;"
+                                                               {{ $item['completed'] ? 'checked' : '' }}
+                                                               onchange="toggleChecklistItem({{ $item['original_index'] }}, this.checked)">
+                                                    </div>
+                                                    <div class="flex-1 ms-3">
+                                                        <span class="{{ $item['completed'] ? 'text-decoration-line-through text-body-tertiary' : 'text-body-highlight' }} fs-9 fw-bold">
+                                                            {{ $item['text'] }}
+                                                        </span>
                                                         @if($item['is_custom'] ?? false)
-                                                            <small class="badge badge-phoenix badge-phoenix-info ms-2 fs-11">PERSONALIZADO</small>
+                                                            <span class="ms-2 badge badge-phoenix badge-phoenix-info fs-11">PERSONALIZADO</span>
                                                         @endif
-                                                    </span>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td class="text-center align-middle">
-                                                <div class="d-flex justify-content-center gap-2">
+                                            <td class="text-center align-middle pe-3">
+                                                <div class="d-flex justify-content-center align-items-center gap-2">
                                                     @if($item['completed'])
-                                                        <span class="badge badge-phoenix badge-phoenix-success fs-10">CONCLUÍDO</span>
+                                                        <span class="badge badge-phoenix badge-phoenix-success fs-10 px-2">CONCLUÍDO</span>
                                                     @else
-                                                        <span class="badge badge-phoenix badge-phoenix-warning fs-10">PENDENTE</span>
+                                                        <span class="badge badge-phoenix badge-phoenix-warning fs-10 px-2">PENDENTE</span>
                                                     @endif
                                                     
-                                                    <button class="btn btn-link p-0 text-danger" type="button" onclick="removeItemFromChecklist({{ $index }}, this)">
+                                                    <button class="btn btn-link p-0 text-danger" type="button" onclick="removeItemFromChecklist({{ $item['original_index'] }}, this)">
                                                         <i class="fas fa-trash-alt fs-11"></i>
                                                     </button>
                                                 </div>
                                             </td>
                                         </tr>
                                     @endforeach
-                                @else
+                                </tbody>
+                            @empty
+                                <tbody>
                                     <tr>
-                                        <td colspan="2" class="text-center py-4 text-body-tertiary italic">Nenhum checklist registrado para esta operação.</td>
+                                        <td colspan="2" class="text-center py-5 text-body-tertiary italic">
+                                            Nenhum item de evolução registrado para esta operação.
+                                        </td>
                                     </tr>
-                                @endif
-                            </tbody>
+                                </tbody>
+                            @endforelse
                         </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- COMENTÁRIOS --}}
+        {{-- HISTÓRICO DE INTERAÇÕES --}}
         <div class="col-12 mb-4">
             <div class="card shadow-none border border-300">
                 <div class="card-header bg-body-tertiary py-2 px-3">
@@ -299,20 +354,40 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="p-3 border-bottom border-200 bg-light">
-                        <div class="input-group">
-                            <input class="form-control" type="text" placeholder="Adicionar observação..." />
-                            <button class="btn btn-phoenix-primary" type="button">Postar</button>
-                        </div>
+                        <form action="{{ route('billings.add_interaction', $operation->id) }}" method="POST">
+                            @csrf
+                            <div class="input-group">
+                                <input class="form-control shadow-none" name="message" type="text" placeholder="Adicionar observação ou detalhe da conversa..." required />
+                                <button class="btn btn-primary fw-bold" type="submit">Postar</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="p-4">
-                        <div class="d-flex align-items-start mb-0">
-                            <div class="avatar avatar-m rounded-circle">
-                                <div class="avatar-name rounded-circle text-primary bg-primary-subtle"><span>SI</span></div>
+                    <div class="p-4 scrollbar" style="max-height: 400px; overflow-y: auto;">
+                        @if($operation && !empty($operation->interactions))
+                            @foreach($operation->interactions as $interaction)
+                                <div class="d-flex align-items-start mb-4">
+                                    <div class="avatar avatar-m rounded-circle">
+                                        <div class="avatar-name rounded-circle text-primary bg-primary-subtle">
+                                            <span>{{ substr($interaction['user_name'], 0, 2) }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3 flex-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <h6 class="mb-0 fw-bold">{{ $interaction['user_name'] }}</h6>
+                                            <span class="text-body-tertiary fs-10">{{ \Carbon\Carbon::parse($interaction['created_at'])->diffForHumans() }}</span>
+                                        </div>
+                                        <div class="bg-body-highlight p-3 rounded-3 border border-translucent">
+                                            <p class="text-body-highlight fs-9 mb-0">{{ $interaction['message'] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="text-center py-4 opacity-50">
+                                <i class="fas fa-comment-slash fs-2 mb-2 d-block"></i>
+                                <p class="fs-10 italic mb-0">Nenhuma interação registrada ainda.</p>
                             </div>
-                            <div class="ms-3 flex-1 bg-light p-3 rounded-3">
-                                <p class="text-body-highlight fs-9 mb-0">Aguardando primeira interação manual.</p>
-                            </div>
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -332,6 +407,34 @@
 
 @push('scripts')
     <script>
+        function toggleChecklistItem(index, completed) {
+            fetch(`/billings/operations/{{ $operation->id }}/checklist`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    item_index: index,
+                    completed: completed
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message);
+                    if (data.moved) {
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        location.reload(); 
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao atualizar checklist:', error);
+            });
+        }
+
         function removeItemFromChecklist(index, btn) {
             if (!confirm('Tem certeza que deseja remover este item do checklist deste cliente?')) return;
 
