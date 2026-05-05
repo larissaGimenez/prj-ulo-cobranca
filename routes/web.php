@@ -153,4 +153,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     //Modulo Negociações
     Route::resource('negotiations', NegotiationController::class);
 
+    Route::get('/debug-error', function () {
+        // Simula o erro exato do screenshot: tentando usar to_date em uma coluna que já é DATE
+        return \Illuminate\Support\Facades\DB::table('titulos_conta_receber')
+            ->selectRaw("SUM(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE THEN 1 ELSE 0 END)")
+            ->first();
+    });
+
+    Route::get('/test-view-error', function () {
+        return view('errors.custom');
+    });
+
 });

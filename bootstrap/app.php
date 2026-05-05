@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,5 +20,33 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Reporting: Registra o erro no AuditLog via Fila (Queue)
+        $exceptions->report(function (Throwable $e) {
+            if (app()->bound('request')) {
+                $request = app('request');
+                
+                \App\Jobs\LogAuditEventJob::dispatch([
+                    'event_type' => 'SYSTEM_ERROR',
+                    'payload' => [
+                        'exception_class' => get_class($e),
+                        'message' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'method' => $request->method(),
+                        'url' => $request->fullUrl(),
+                    ],
+                    'url' => $request->fullUrl(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'user_id' => auth()->id(),
+                ]);
+            }
+        });
+
+        // Rendering: Exibe a página Phoenix bonita se não estiver em modo debug
+        $exceptions->render(function (Throwable $e, $request) {
+            if (!config('app.debug') && !$request->is('api/*')) {
+                return response()->view('errors.custom', [], 500);
+            }
+        });
     })->create();
