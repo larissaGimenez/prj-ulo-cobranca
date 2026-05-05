@@ -22,6 +22,9 @@ class RoleAndPermissionSeeder extends Seeder
             'access.products',
             'access.supports',
             'access.credentials',
+            'access.negotiations',
+            'access.reports',
+            'access.audit_logs',
         ];
 
         foreach ($modulePermissions as $permission) {

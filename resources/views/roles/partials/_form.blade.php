@@ -11,6 +11,9 @@
         'supports'    => 'SAC / Suporte',
         'credentials' => 'Credenciais de API / Sistema',
         'tenants'     => 'Tenants',
+        'negotiations'=> 'Negociações',
+        'reports'     => 'Relatórios',
+        'audit_logs'  => 'Logs de Auditoria',
     ];
 @endphp
 

@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\NegotiationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AuditLogController;
 
 
 /*
@@ -70,9 +71,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('tenants', TenantController::class);
     });
 
-    //Roles
+    //Roles e Auditoria
     Route::prefix('admin')->group(function () {
         Route::resource('roles', RoleController::class);
+        
+        Route::middleware('can:access.audit_logs')->group(function () {
+            Route::get('audit-logs', [AuditLogController::class, 'index'])->name('admin.audit_logs.index');
+            Route::post('audit-logs/sync', [AuditLogController::class, 'sync'])->name('admin.audit_logs.sync');
+        });
     });
 
     /**

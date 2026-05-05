@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\Auditable;
 
 class TituloContaReceber extends Model
 {
+    use Auditable;
     protected $table = 'titulos_conta_receber';
 
     public $incrementing = false;

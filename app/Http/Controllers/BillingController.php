@@ -8,6 +8,8 @@ use App\Models\BillingKanbanStage;
 use App\Models\BillingOperation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class BillingController extends Controller
@@ -292,8 +294,9 @@ class BillingController extends Controller
         $codCliente = (string) $cliente->cliente_id_omie;
 
         // Implementação de Cache para métricas pesadas (15 minutos)
-        $metrics = Illuminate\Support\Facades\Cache::remember("client_metrics_{$codCliente}", now()->addMinutes(15), function() use ($codCliente) {
-            return TituloContaReceber::whereRaw('"cod_cliente" = ?', [$codCliente])
+        // Salvamos como array para evitar erros de serialização de objetos incompletos
+        $metrics = Cache::remember("client_metrics_{$codCliente}", now()->addMinutes(15), function() use ($codCliente) {
+            $data = TituloContaReceber::whereRaw('"cod_cliente" = ?', [$codCliente])
                 ->selectRaw("
                     SUM(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE 
                         AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
@@ -311,11 +314,17 @@ class BillingController extends Controller
                         THEN to_date(data_venc, 'DD/MM/YYYY') END) as oldest_venc
                 ")
                 ->first();
+            
+            return $data ? $data->toArray() : [
+                'total_divida' => 0,
+                'vencidos_count' => 0,
+                'oldest_venc' => null
+            ];
         });
 
-        $totalDivida = $metrics->total_divida ?? 0;
-        $vencidosCount = $metrics->vencidos_count ?? 0;
-        $diasAtraso = $metrics->oldest_venc ? (int) \Carbon\Carbon::parse($metrics->oldest_venc)->diffInDays(\Carbon\Carbon::now()) : 0;
+        $totalDivida = $metrics['total_divida'] ?? 0;
+        $vencidosCount = $metrics['vencidos_count'] ?? 0;
+        $diasAtraso = ($metrics['oldest_venc'] ?? null) ? (int) \Carbon\Carbon::parse($metrics['oldest_venc'])->diffInDays(\Carbon\Carbon::now()) : 0;
 
         // Títulos: Trazemos apenas o necessário para a listagem (limite opcional se houver milhares)
         $titulos = TituloContaReceber::whereRaw('"cod_cliente" = ?', [$codCliente])

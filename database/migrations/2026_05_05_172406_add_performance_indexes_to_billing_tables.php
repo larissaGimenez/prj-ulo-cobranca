@@ -15,9 +15,6 @@ return new class extends Migration
             $table->index('cod_cliente');
         });
 
-        // Índice funcional para acelerar cálculos baseados em data (PostgreSQL)
-        Illuminate\Support\Facades\DB::statement('CREATE INDEX IF NOT EXISTS idx_titulos_vencimento_date ON titulos_conta_receber (to_date(data_venc, \'DD/MM/YYYY\'))');
-
         Schema::table('billing_operations', function (Blueprint $table) {
             $table->index('cliente_id_omie');
         });
