@@ -87,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/billings/operations/{id}/checklist', [BillingController::class, 'addItemToChecklist'])->name('billings.add_checklist_item');
     Route::delete('/billings/operations/{id}/checklist', [BillingController::class, 'removeItemFromChecklist'])->name('billings.remove_checklist_item');
     Route::patch('/billings/operations/{id}/checklist', [BillingController::class, 'updateChecklist'])->name('billings.update_checklist');
+    Route::post('/billings/operations/{id}/move', [BillingController::class, 'moveStage'])->name('billings.move_stage');
     Route::post('/billings/sync', [BillingController::class, 'sync'])->name('billings.sync');
     Route::get('/billings/{id}', [BillingController::class, 'show'])->name('billings.show');
 

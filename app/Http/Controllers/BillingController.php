@@ -180,8 +180,8 @@ class BillingController extends Controller
                 ->first();
 
             if ($nextStage) {
-                // Avança para a próxima etapa
                 $operation->billing_kanban_stage_id = $nextStage->id;
+                $operation->data_entrada_etapa = now();
                 
                 // Soma o novo checklist ao existente
                 $newItems = collect($nextStage->checklist ?? [])->map(function($item) use ($nextStage) {
@@ -201,6 +201,52 @@ class BillingController extends Controller
         }
 
         return response()->json(['success' => true, 'moved' => false, 'message' => 'Alteração salva com sucesso!']);
+    }
+
+    /**
+     * Move o card para frente ou para trás na esteira.
+     */
+    public function moveStage(Request $request, $id)
+    {
+        $operation = BillingOperation::findOrFail($id);
+        $direction = $request->direction; // 'forward' ou 'backward'
+        
+        $currentStage = $operation->stage;
+        
+        if ($direction === 'forward') {
+            $targetStage = BillingKanbanStage::where('sort_order', '>', $currentStage->sort_order)
+                ->orderBy('sort_order', 'asc')
+                ->first();
+        } else {
+            $targetStage = BillingKanbanStage::where('sort_order', '<', $currentStage->sort_order)
+                ->orderBy('sort_order', 'desc')
+                ->first();
+        }
+
+        if ($targetStage) {
+            $operation->billing_kanban_stage_id = $targetStage->id;
+            $operation->data_entrada_etapa = now();
+            
+            // Opcional: Adicionar checklist da nova etapa se não existir
+            $currentChecklist = $operation->checklist_data;
+            if (!is_array($currentChecklist)) {
+                $currentChecklist = is_string($currentChecklist) ? (json_decode($currentChecklist, true) ?? []) : [];
+            }
+            $newItems = collect($targetStage->checklist ?? [])->map(function($item) use ($targetStage) {
+                return ['text' => $item, 'completed' => false, 'stage_id' => $targetStage->id];
+            })->toArray();
+            
+            // Evitar duplicidade de itens se já voltamos e avançamos
+            $existingTexts = collect($currentChecklist)->pluck('text')->toArray();
+            $filteredNewItems = collect($newItems)->filter(fn($item) => !in_array($item['text'], $existingTexts))->toArray();
+
+            $operation->checklist_data = array_merge($currentChecklist, $filteredNewItems);
+            $operation->save();
+
+            return redirect()->back()->with('success', "Card movido para: {$targetStage->name}");
+        }
+
+        return redirect()->back()->with('error', 'Não há mais etapas nesta direção.');
     }
 
     /**

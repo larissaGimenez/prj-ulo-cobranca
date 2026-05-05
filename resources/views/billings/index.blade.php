@@ -111,6 +111,11 @@
                                     $empresa = $cliente['empresa'] ?? 'N/A';
                                     $totalDivida = $data['total_divida'] ?? 0;
                                     $vencidosCount = $data['vencidos_count'] ?? 0;
+                                    $diasInadimplente = $data['dias_inadimplente'] ?? 0;
+                                    
+                                    $dataEntrada = $operation->data_entrada_etapa ?? $operation->updated_at;
+                                    $diasNestaEtapa = (int) \Carbon\Carbon::parse($dataEntrada)->diffInDays(now());
+                                    $textoDiasEtapa = $diasNestaEtapa == 0 ? 'Hoje' : ($diasNestaEtapa == 1 ? '1 dia nesta etapa' : $diasNestaEtapa . ' dias nesta etapa');
                                     
                                     $cardChecklist = $operation->checklist_data;
                                     if (empty($cardChecklist) && !empty($stage->checklist)) {
@@ -120,7 +125,7 @@
                                     // Filtra checklist para o badge (apenas atual)
                                     $currentStageItems = collect($cardChecklist)->where('stage_id', $stage->id);
                                 @endphp
-                                <div class="card mb-2 shadow-none border border-translucent hover-card-style transition-base bg-white cursor-pointer" 
+                                <div class="card mb-2 shadow-none border border-translucent hover-card-style transition-base kanban-item cursor-pointer" 
                                      onclick="openCardModal({{ $operation->id }}, @js($data), @js($cardChecklist ?? []), {{ $stage->id }})">
                                     <div class="card-body p-2 px-3">
                                         <div class="d-flex justify-content-between align-items-start mb-1">
@@ -137,26 +142,50 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <p class="text-primary fw-bold fs-11 mb-2 text-truncate">
-                                            <i class="fas fa-building me-1"></i>{{ Str::limit($empresa, 25) }}
+                                        <p class="fw-bold fs-11 mb-2 text-truncate card-secondary-text">
+                                            <span class="text-primary"><i class="fas fa-building me-1"></i>{{ $empresa }}</span>
+                                            <span class="mx-1 opacity-50">-</span>
+                                            <span class="text-danger">{{ $diasInadimplente }} dias inadimplente</span>
+                                            <span class="mx-1 opacity-50">-</span>
+                                            <span class="text-body-highlight">{{ $vencidosCount }} títulos</span>
                                         </p>
-                                        <div class="bg-body-highlight rounded-2 p-1 px-2 mb-2 border border-translucent">
+                                        <div class="badge-divida rounded-2 p-1 px-2 mb-2 border border-translucent">
                                             <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-body-tertiary fw-bold fs-11 uppercase">Dívida</small>
+                                                <small class="fw-bold fs-11 uppercase opacity-75">Dívida</small>
                                                 <span class="text-danger fw-bolder fs-10">R$
                                                     {{ number_format($totalDivida, 2, ',', '.') }}</span>
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between">
                                             <span class="text-body-tertiary fs-11"><i
-                                                    class="fas fa-file-invoice me-1"></i>{{ $vencidosCount }} títulos</span>
-                                            <span class="text-primary fw-bold fs-11 uppercase">VER MAIS <i class="fas fa-eye ms-1"></i></span>
+                                                    class="fas fa-calendar-day me-1"></i>{{ $textoDiasEtapa }}</span>
+                                            
+                                            <div class="d-flex align-items-center gap-1" onclick="event.stopPropagation()">
+                                                <form action="{{ route('billings.move_stage', $operation->id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <input type="hidden" name="direction" value="backward">
+                                                    <button type="submit" class="btn btn-link p-1 text-body-quaternary move-btn-hover" title="Voltar etapa">
+                                                        <i class="fas fa-chevron-circle-left fs-9"></i>
+                                                    </button>
+                                                </form>
+                                                
+                                                <span class="text-primary fw-bold fs-11 uppercase cursor-pointer mx-1 hover-underline" onclick="openCardModal({{ $operation->id }}, @js($data), @js($cardChecklist ?? []), {{ $stage->id }})">
+                                                    VER <i class="fas fa-eye ms-1"></i>
+                                                </span>
+
+                                                <form action="{{ route('billings.move_stage', $operation->id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <input type="hidden" name="direction" value="forward">
+                                                    <button type="submit" class="btn btn-link p-1 text-primary move-btn-hover" title="Avançar etapa">
+                                                        <i class="fas fa-chevron-circle-right fs-9"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             @empty
                                 <div class="text-center py-5 opacity-25 empty-info">
-                                    <i class="fas fa-folder-open fs-3 mb-2 d-block"></i>
                                     <p class="fs-11 mb-0 italic">Vazio</p>
                                 </div>
                             @endforelse
@@ -503,10 +532,48 @@
 
 @push('css')
     <style>
+        :root {
+            --kanban-column-bg: #f5f7fa;
+            --kanban-card-bg: #ffffff;
+            --kanban-card-border: rgba(0, 0, 0, 0.1);
+            --kanban-card-text: #1e293b;
+            --kanban-card-secondary: #64748b;
+            --kanban-badge-divida: #f8f9fa;
+        }
+
+        [data-bs-theme="dark"] {
+            --kanban-column-bg: #141c2e;
+            --kanban-card-bg: #1e293b;
+            --kanban-card-border: #334155;
+            --kanban-card-text: #f8fafc;
+            --kanban-card-secondary: #94a3b8;
+            --kanban-badge-divida: #0f172a;
+        }
+
         body {
             overflow: hidden !important;
         }
 
+        .kanban-column-content {
+            background-color: var(--kanban-column-bg) !important;
+        }
+
+        .kanban-item {
+            background-color: var(--kanban-card-bg) !important;
+            border-color: var(--kanban-card-border) !important;
+        }
+
+        .text-body-highlight {
+            color: var(--kanban-card-text) !important;
+        }
+
+        .card-secondary-text {
+            color: var(--kanban-card-secondary) !important;
+        }
+
+        .badge-divida {
+            background-color: var(--kanban-badge-divida) !important;
+        }
 
         .custom-scrollbar::-webkit-scrollbar {
             height: 8px;
@@ -527,9 +594,19 @@
         .transition-base {
             transition: all 0.2s ease-in-out;
         }
+ 
+        .move-btn-hover {
+            transition: transform 0.1s ease;
+            opacity: 0.8;
+        }
 
-        .bg-body-highlight {
-            background-color: #fcfcfd !important;
+        .move-btn-hover:hover {
+            transform: scale(1.2);
+            opacity: 1;
+        }
+
+        .hover-underline:hover {
+            text-decoration: underline !important;
         }
 
         .border-dashed {

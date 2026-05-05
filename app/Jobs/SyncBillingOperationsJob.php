@@ -55,6 +55,7 @@ class SyncBillingOperationsJob implements ShouldQueue
 
                 $vencidosCount = 0;
                 $totalDivida = 0;
+                $maxDiasAtraso = 0;
 
                 foreach ($titulos as $t) {
                     try {
@@ -66,6 +67,11 @@ class SyncBillingOperationsJob implements ShouldQueue
                         if ($vencDate->isPast() && $aberto) {
                             $vencidosCount++;
                             $totalDivida += $t->valor_float;
+                            
+                            $diasAtraso = (int) $vencDate->diffInDays($now);
+                            if ($diasAtraso > $maxDiasAtraso) {
+                                $maxDiasAtraso = $diasAtraso;
+                            }
                         }
                     } catch (\Exception $e) { continue; }
                 }
@@ -74,12 +80,13 @@ class SyncBillingOperationsJob implements ShouldQueue
                 $stageId = $existingOp ? $existingOp->billing_kanban_stage_id : $stageInadimplencia->id;
 
                 // Metadados Snapshot
-                $metadata = json_encode([
+                $metadata = [
                     'cliente' => $cliente->toArray(),
                     'total_divida' => $totalDivida,
                     'titulos_count' => $titulos->count(),
-                    'vencidos_count' => $vencidosCount
-                ]);
+                    'vencidos_count' => $vencidosCount,
+                    'dias_inadimplente' => $maxDiasAtraso
+                ];
 
                 // Checklist Initialization
                 $checklistData = $existingOp ? $existingOp->checklist_data : null;
@@ -96,15 +103,27 @@ class SyncBillingOperationsJob implements ShouldQueue
                     'cliente_id_omie' => $omieId,
                     'billing_kanban_stage_id' => $stageId,
                     'metadata' => $metadata,
-                    'checklist_data' => $checklistData ? json_encode($checklistData) : null,
+                    'checklist_data' => $checklistData,
                     'updated_at' => $now,
                     'created_at' => $existingOp ? $existingOp->created_at : $now,
                 ];
             }
 
-            // Executa Upsert em massa (Muito mais rápido que um por um)
+            // Executa updateOrCreate individualmente para evitar erro de constraint do Postgres
             if (!empty($upsertData)) {
-                BillingOperation::upsert($upsertData, ['cliente_id_omie'], ['billing_kanban_stage_id', 'metadata', 'checklist_data', 'updated_at']);
+                foreach ($upsertData as $data) {
+                    BillingOperation::updateOrCreate(
+                        ['cliente_id_omie' => $data['cliente_id_omie']],
+                        [
+                            'billing_kanban_stage_id' => $data['billing_kanban_stage_id'],
+                            'metadata' => $data['metadata'],
+                            'checklist_data' => $data['checklist_data'],
+                            'updated_at' => $data['updated_at'],
+                            'created_at' => $data['created_at'],
+                            'data_entrada_etapa' => \App\Models\BillingOperation::where('cliente_id_omie', $data['cliente_id_omie'])->value('data_entrada_etapa') ?? $now
+                        ]
+                    );
+                }
             }
 
         } finally {

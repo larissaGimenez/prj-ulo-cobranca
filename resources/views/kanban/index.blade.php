@@ -147,13 +147,28 @@
     @endpush
 
     <style>
+        :root {
+            --kanban-column-bg: #f8f9fa;
+            --kanban-card-bg: #ffffff;
+            --kanban-card-border: rgba(0, 0, 0, 0.1);
+            --kanban-text-primary: #1e293b;
+            --kanban-text-secondary: #64748b;
+        }
+
+        [data-bs-theme="dark"] {
+            --kanban-column-bg: #141c2e;
+            --kanban-card-bg: #1e293b;
+            --kanban-card-border: #334155;
+            --kanban-text-primary: #f8fafc;
+            --kanban-text-secondary: #94a3b8;
+        }
+
         /* Removendo o scroll do body apenas para o Kanban */
         body {
             overflow: hidden !important;
         }
 
         .kanban-page-wrapper {
-            /* Ajustado para caber entre navbar e footer sem transbordar */
             height: calc(100vh - 180px) !important;
         }
 
@@ -161,6 +176,10 @@
             width: 300px;
             flex-shrink: 0;
             transition: width 0.2s ease;
+        }
+
+        .kanban-column-content {
+            background-color: var(--kanban-column-bg) !important;
         }
 
         .vertical-text {
@@ -178,12 +197,15 @@
             border-radius: 10px;
         }
 
-        .bg-body-emphasis {
-            background-color: #fcfcfd !important;
-        }
-
         .kanban-items-container {
             scrollbar-width: thin;
+        }
+
+        /* Ajuste de profundidade dos cards */
+        .kanban-item {
+            background-color: var(--kanban-card-bg) !important;
+            border-color: var(--kanban-card-border) !important;
+            color: var(--kanban-text-primary) !important;
         }
     </style>
 @endsection
