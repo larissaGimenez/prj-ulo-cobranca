@@ -12,7 +12,7 @@ class AuditLogController extends Controller
      */
     public function index()
     {
-        $logs = AuditLog::with('user')->orderBy('created_at', 'desc')->paginate(20);
+        $logs = AuditLog::with('user')->orderBy('created_at', 'desc')->paginate(10);
         return view('admin.audit_logs.index', compact('logs'));
     }
 
@@ -26,7 +26,7 @@ class AuditLogController extends Controller
         // Sintaxe específica do PostgreSQL para buscar chaves dentro de um JSONB
         $logs = AuditLog::whereRaw("payload->'new' ?? ?", [$attribute])
             ->orWhereRaw("payload->'old' ?? ?", [$attribute])
-            ->paginate(20);
+            ->paginate(10);
 
         return view('admin.audit_logs.index', compact('logs'));
     }
