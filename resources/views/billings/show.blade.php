@@ -116,7 +116,8 @@
                             <tbody class="list">
                                 @forelse($titulos as $titulo)
                                     @php
-                                        $vencimento = \Carbon\Carbon::createFromFormat('d/m/Y', $titulo->data_venc);
+                                        // data_venc agora é um DATE nativo do PostgreSQL (YYYY-MM-DD)
+                                        $vencimento = \Carbon\Carbon::parse($titulo->data_venc);
                                         $hoje = \Carbon\Carbon::today();
 
                                         // Lógica de Status
@@ -125,11 +126,11 @@
                                         $isVencido = $vencimento->isBefore($hoje) && !$isPago;
                                     @endphp
                                     <tr class="align-middle">
-                                        <td class="ps-3">{{ $titulo->data_venc }}</td>
+                                        <td class="ps-3">{{ $vencimento->format('d/m/Y') }}</td>
                                         <td class="text-body-tertiary fw-bold">{{ $titulo->numero_parcela }}</td>
                                         <td>{{ $titulo->cod_lanc }}</td>
                                         <td class="text-end fw-bold">
-                                            R$ {{ number_format($titulo->valor_float, 2, ',', '.') }}
+                                            R$ {{ number_format($titulo->valor, 2, ',', '.') }}
                                         </td>
                                         <td class="text-end pe-3">
                                             @if($isPago)
@@ -149,11 +150,14 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-4">Nenhum título encontrado.</td>
+                                        <td colspan="5" class="text-center py-4">Nenhum título encontrado.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
+                        <div class="mt-3">
+                            {{ $titulos->links('pagination::bootstrap-5') }}
+                        </div>
                     </div>
                 </div>
             </div>

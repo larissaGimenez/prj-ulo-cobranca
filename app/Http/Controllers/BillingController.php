@@ -296,22 +296,17 @@ class BillingController extends Controller
         // Implementação de Cache para métricas pesadas (15 minutos)
         // Salvamos como array para evitar erros de serialização de objetos incompletos
         $metrics = Cache::remember("client_metrics_{$codCliente}", now()->addMinutes(15), function() use ($codCliente) {
-            $data = TituloContaReceber::whereRaw('"cod_cliente" = ?', [$codCliente])
+            $data = TituloContaReceber::where('cod_cliente', $codCliente)
                 ->selectRaw("
-                    SUM(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE 
+                    SUM(CASE WHEN data_venc < CURRENT_DATE 
                         AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
-                        THEN 
-                            CASE WHEN valor LIKE '%,%' 
-                                 THEN CAST(REPLACE(REPLACE(valor, '.', ''), ',', '.') AS NUMERIC)
-                                 ELSE CAST(valor AS NUMERIC)
-                            END
-                        ELSE 0 END) as total_divida,
-                    COUNT(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE 
+                        THEN valor ELSE 0 END) as total_divida,
+                    COUNT(CASE WHEN data_venc < CURRENT_DATE 
                         AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
                         THEN 1 END) as vencidos_count,
-                    MIN(CASE WHEN to_date(data_venc, 'DD/MM/YYYY') < CURRENT_DATE 
+                    MIN(CASE WHEN data_venc < CURRENT_DATE 
                         AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
-                        THEN to_date(data_venc, 'DD/MM/YYYY') END) as oldest_venc
+                        THEN data_venc END) as oldest_venc
                 ")
                 ->first();
             
@@ -326,10 +321,10 @@ class BillingController extends Controller
         $vencidosCount = $metrics['vencidos_count'] ?? 0;
         $diasAtraso = ($metrics['oldest_venc'] ?? null) ? (int) \Carbon\Carbon::parse($metrics['oldest_venc'])->diffInDays(\Carbon\Carbon::now()) : 0;
 
-        // Títulos: Trazemos apenas o necessário para a listagem (limite opcional se houver milhares)
-        $titulos = TituloContaReceber::whereRaw('"cod_cliente" = ?', [$codCliente])
-            ->orderByRaw("to_date(data_venc, 'DD/MM/YYYY') DESC") // Mais recentes primeiro geralmente é melhor
-            ->get();
+        // Títulos: Trazemos apenas o necessário para a listagem (Gargalo #2 resolvido com paginação)
+        $titulos = TituloContaReceber::where('cod_cliente', $codCliente)
+            ->orderBy('data_venc', 'DESC')
+            ->paginate(20);
 
         // Trazemos a operação carregando negociações e interações (Eager Loading)
         $operation = BillingOperation::with(['negotiations', 'stage'])
