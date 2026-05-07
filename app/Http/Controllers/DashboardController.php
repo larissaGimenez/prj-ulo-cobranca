@@ -32,10 +32,9 @@ class DashboardController extends Controller
         $debtorsLastWeek = ClienteInadimplente::where('data_criacao', '<', $lastWeek)->count();
         $agreementsLastWeek = Negotiation::where('created_at', '<', $lastWeek)->count();
         
-        // Para dívida, estimamos baseado nos títulos criados na última semana
+        // Para dívida, usamos o valor direto pois agora é NUMERIC no banco
         $newDebtLastWeek = TituloContaReceber::where('data_criacao', '>=', $lastWeek)
-            ->get()
-            ->sum(fn($t) => (float) str_replace(['.', ','], ['', '.'], $t->valor));
+            ->sum('valor');
 
         $stats = [
             'total_debtors' => $totalDebtors,
@@ -82,7 +81,11 @@ class DashboardController extends Controller
             foreach ($parcelas as $p) {
                 $venc = Carbon::parse($p['vencimento'] ?? null);
                 if ($venc->isBetween(Carbon::now(), $next30Days)) {
-                    $projection += (float) str_replace(['.', ','], ['', '.'], $p['valor'] ?? 0);
+                    $valorParcela = $p['valor'] ?? 0;
+                    if (is_string($valorParcela) && str_contains($valorParcela, ',')) {
+                        $valorParcela = str_replace(['.', ','], ['', '.'], $valorParcela);
+                    }
+                    $projection += (float) $valorParcela;
                 }
             }
         }
