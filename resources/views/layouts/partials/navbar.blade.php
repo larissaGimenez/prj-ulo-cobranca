@@ -44,7 +44,7 @@
                     aria-labelledby="navbarDropdownUser">
                     <div class="card position-relative border-0">
                         <div class="card-body p-0 text-center pt-4 pb-3">
-                            <h6 class="mt-2 text-body-emphasis">{{ Auth::user()->name }}</h6>
+                            <h6 class="mt-2 text-body-emphasis">{{ Auth::user()?->name ?? 'Visitante' }}</h6>
                         </div>
                         <div class="card-footer p-0 border-top">
                             <div class="px-3 py-3">

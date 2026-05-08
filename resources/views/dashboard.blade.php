@@ -45,7 +45,7 @@
                                 </div>
                                 <h6 class="mb-0 text-body-tertiary fw-bold">TOTAL DA DÍVIDA</h6>
                             </div>
-                            <h2 class="text-danger mb-3">R$ {{ number_format($stats['total_debt_value'], 0, ',', '.') }}</h2>
+                            <h2 class="text-danger mb-3">R$ {{ number_format($stats['total_debt_value'], 2, ',', '.') }}</h2>
                             <div class="d-flex align-items-center">
                                 <span class="badge badge-phoenix badge-phoenix-danger fs-10 me-2">+ R$ {{ number_format($stats['debt_diff'], 0, ',', '.') }}</span>
                                 <span class="text-body-tertiary fs-10 fw-semibold text-nowrap">novos títulos</span>

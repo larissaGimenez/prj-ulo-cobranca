@@ -4,7 +4,10 @@ $app = require_once 'bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$results = \Illuminate\Support\Facades\DB::select("SELECT dados_titulo->>'valor_documento' as val FROM titulos_conta_receber LIMIT 10");
+use Illuminate\Support\Facades\DB;
+
+$results = DB::select("SELECT status, COUNT(*) as count, SUM(valor) as total FROM titulos_conta_receber GROUP BY status");
+
 foreach($results as $r) {
-    echo "Value: " . $r->val . "\n";
+    echo "Status: " . ($r->status ?? 'NULL') . " | Count: " . $r->count . " | Total: " . $r->total . "\n";
 }

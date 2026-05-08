@@ -155,16 +155,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     //================== DEBUG TELA DE ERRO (DELETAR DEPOIS) =========================================
-    Route::get('/debug-error', function () {
-        return \Illuminate\Support\Facades\DB::table('titulos_conta_receber')
-            ->selectRaw("SUM(CASE WHEN data_venc < CURRENT_DATE THEN 1 ELSE 0 END)")
-            ->first();
-    });
+    // Route::get('/debug-error', function () {
+    //     return \Illuminate\Support\Facades\DB::table('titulos_conta_receber')
+    //         ->selectRaw("SUM(CASE WHEN data_venc < CURRENT_DATE THEN 1 ELSE 0 END)")
+    //         ->first();
+    // });
 
     
-    Route::get('/test-view-error', function () {
-        return view('errors.custom');
-    });
+    // Route::get('/test-view-error', function () {
+    //     return view('errors.custom');
+    // });
     //================== FIM DEBUG TELA DE ERRO =========================================
 
 });

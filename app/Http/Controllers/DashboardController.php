@@ -21,9 +21,7 @@ class DashboardController extends Controller
 
         // 1. Estatísticas Atuais
         $totalDebtors = ClienteInadimplente::count();
-        $totalDebtValue = BillingOperation::query()
-            ->select(DB::raw("SUM(CAST(metadata->>'total_divida' AS NUMERIC)) as total"))
-            ->value('total') ?? 0;
+        $totalDebtValue = TituloContaReceber::where('status', 'ATRASADO')->sum('valor');
         $activeAgreementsCount = Negotiation::where('status', 'em andamento')->count();
         $finishedAgreementsCount = Negotiation::where('status', 'quitado')->count();
         $totalAgreements = $activeAgreementsCount + $finishedAgreementsCount;
