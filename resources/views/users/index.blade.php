@@ -24,9 +24,6 @@
             </div>
             <div class="col-auto">
                 <div class="d-flex align-items-center">
-                    <button class="btn btn-link text-body me-4 px-0">
-                        <span class="fa-solid fa-file-export fs-9 me-2"></span>Exportar
-                    </button>
                     <a href="{{ route('users.create') }}" class="btn btn-primary">
                         <span class="fas fa-plus me-2"></span>Novo Usuário
                     </a>
@@ -114,12 +111,21 @@
                                             @endif
 
                                             <div class="dropdown-divider"></div>
-                                            <form action="{{ route('users.destroy', $user) }}" method="POST"
-                                                onsubmit="return confirm('Deseja desativar este usuário?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">Excluir</button>
-                                            </form>
+                                            @if($user->trashed())
+                                                <form action="{{ route('users.restore', $user->id) }}" method="POST"
+                                                    onsubmit="return confirm('Deseja reativar este usuário?')">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="dropdown-item text-success">Reativar</button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('users.destroy', $user) }}" method="POST"
+                                                    onsubmit="return confirm('Deseja desativar este usuário?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger">Desativar</button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>

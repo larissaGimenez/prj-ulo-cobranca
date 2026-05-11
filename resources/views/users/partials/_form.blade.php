@@ -17,17 +17,23 @@
         @enderror
     </div>
 
+    @php
+        $isCnpj = old('cnpj') || (isset($user) && $user->cnpj);
+        $initialDocType = $isCnpj ? 'cnpj' : 'cpf';
+    @endphp
+
     <div class="col-12 col-sm-6">
         <label class="form-label" for="doc_type">Tipo de Pessoa</label>
-        <select class="form-select" id="doc_type" onchange="handleDocTypeChange()">
-            <option value="cpf" {{ old('cpf', $user->cpf ?? '') ? 'selected' : '' }}>Pessoa Física (CPF)</option>
-            <option value="cnpj" {{ old('cnpj', $user->cnpj ?? '') ? 'selected' : '' }}>Pessoa Jurídica (CNPJ)</option>
+        <select class="form-select" id="doc_type" name="doc_type" onchange="handleDocTypeChange()">
+            <option value="cpf" {{ $initialDocType === 'cpf' ? 'selected' : '' }}>Pessoa Física (CPF)</option>
+            <option value="cnpj" {{ $initialDocType === 'cnpj' ? 'selected' : '' }}>Pessoa Jurídica (CNPJ)</option>
         </select>
     </div>
 
-    <div class="col-12 col-sm-6" id="group-cpf">
+    <div class="col-12 col-sm-6 {{ $initialDocType === 'cpf' ? '' : 'd-none' }}" id="group-cpf">
         <label class="form-label" for="cpf">CPF</label>
         <input class="form-control @error('cpf') is-invalid @enderror" id="cpf" name="cpf" type="text"
+            {{ $initialDocType === 'cpf' ? 'required' : '' }}
             placeholder="000.000.000-00" maxlength="14" oninput="maskCPF(this)"
             value="{{ old('cpf', $user->cpf ?? '') }}" />
         @error('cpf')
@@ -35,9 +41,10 @@
         @enderror
     </div>
 
-    <div class="col-12 col-sm-6 d-none" id="group-cnpj">
+    <div class="col-12 col-sm-6 {{ $initialDocType === 'cnpj' ? '' : 'd-none' }}" id="group-cnpj">
         <label class="form-label" for="cnpj">CNPJ</label>
         <input class="form-control @error('cnpj') is-invalid @enderror" id="cnpj" name="cnpj" type="text"
+            {{ $initialDocType === 'cnpj' ? 'required' : '' }}
             placeholder="00.000.000/0000-00" maxlength="18" oninput="maskCNPJ(this)"
             value="{{ old('cnpj', $user->cnpj ?? '') }}" />
         @error('cnpj')
@@ -114,10 +121,13 @@
         if (type === 'cpf') {
             gCpf.classList.remove('d-none');
             gCnpj.classList.add('d-none');
-            // Não limpamos o valor aqui para não perder o que o user digitou se ele alternar sem querer
+            iCpf.required = true;
+            iCnpj.required = false;
         } else {
             gCnpj.classList.remove('d-none');
             gCpf.classList.add('d-none');
+            iCnpj.required = true;
+            iCpf.required = false;
         }
     }
 

@@ -42,13 +42,24 @@
                 <a href="{{ route('users.edit', $user) }}" class="btn btn-phoenix-primary me-2">
                     <span class="fas fa-edit me-2"></span>Editar Perfil
                 </a>
-                <form action="{{ route('users.destroy', $user) }}" method="POST"
-                    onsubmit="return confirm('Deseja desativar este usuário?')">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-phoenix-danger">
-                        <span class="fas fa-trash me-2"></span>Desativar Usuário
-                    </button>
-                </form>
+                @if($user->trashed())
+                    <form action="{{ route('users.restore', $user->id) }}" method="POST"
+                        onsubmit="return confirm('Deseja reativar este usuário?')">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-phoenix-success">
+                            <span class="fas fa-trash-restore me-2"></span>Reativar Usuário
+                        </button>
+                    </form>
+                @else
+                    <form action="{{ route('users.destroy', $user) }}" method="POST"
+                        onsubmit="return confirm('Deseja desativar este usuário?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-phoenix-danger">
+                            <span class="fas fa-trash me-2"></span>Desativar Usuário
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
 

@@ -71,6 +71,11 @@ class UserService
         return $user->delete();
     }
 
+    public function restore(User $user): bool
+    {
+        return $user->restore();
+    }
+
     /**
      * Lógica de Convite via Webhook n8n
      */

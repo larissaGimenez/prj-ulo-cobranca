@@ -16,8 +16,9 @@ class UserStoreRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'cpf' => ['required_without:cnpj', 'nullable', 'string', 'max:14', 'unique:users,cpf'],
-            'cnpj' => ['required_without:cpf', 'nullable', 'string', 'max:18', 'unique:users,cnpj'],
+            'doc_type' => ['required', 'in:cpf,cnpj'],
+            'cpf' => ['required_if:doc_type,cpf', 'nullable', 'string', 'max:14', 'unique:users,cpf'],
+            'cnpj' => ['required_if:doc_type,cnpj', 'nullable', 'string', 'max:18', 'unique:users,cnpj'],
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', 'exists:roles,name'],
             'status' => ['nullable', 'string', 'in:active,pending,inactive'],
@@ -44,8 +45,8 @@ class UserStoreRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            'cpf' => $this->cpf ? preg_replace('/\D/', '', $this->cpf) : null,
-            'cnpj' => $this->cnpj ? preg_replace('/\D/', '', $this->cnpj) : null,
+            'cpf' => $this->doc_type === 'cpf' && $this->cpf ? preg_replace('/\D/', '', $this->cpf) : null,
+            'cnpj' => $this->doc_type === 'cnpj' && $this->cnpj ? preg_replace('/\D/', '', $this->cnpj) : null,
             'phone' => $this->phone ? preg_replace('/\D/', '', $this->phone) : null,
         ]);
     }

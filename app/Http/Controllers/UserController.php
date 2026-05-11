@@ -91,6 +91,18 @@ class UserController extends Controller
     }
 
     /**
+     * Reativa usuário (Restore)
+     */
+    public function restore(int $id): RedirectResponse
+    {
+        $user = User::withTrashed()->findOrFail($id);
+        $this->userService->restore($user);
+
+        return redirect()->route('users.index')
+            ->with('status', 'Usuário reativado com sucesso!');
+    }
+
+    /**
      * Reenvia o convite para o Webhook do n8n
      */
     public function resendInvite(int $id): RedirectResponse

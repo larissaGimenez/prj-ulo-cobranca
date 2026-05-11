@@ -62,6 +62,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Módulo de Usuários
     Route::post('users/{user}/resend-invite', [UserController::class, 'resendInvite'])->name('users.resend-invite');
+    Route::patch('users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
     Route::resource('users', UserController::class);
 
     // Área Administrativa

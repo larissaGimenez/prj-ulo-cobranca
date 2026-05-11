@@ -30,8 +30,9 @@ class UserUpdateRequest extends FormRequest
                 Rule::unique('users')->ignore($userId),
             ],
 
+            'doc_type' => ['required', 'in:cpf,cnpj'],
             'cpf' => [
-                'required_without:cnpj',
+                'required_if:doc_type,cpf',
                 'nullable',
                 'string',
                 'max:14',
@@ -39,7 +40,7 @@ class UserUpdateRequest extends FormRequest
             ],
 
             'cnpj' => [
-                'required_without:cpf',
+                'required_if:doc_type,cnpj',
                 'nullable',
                 'string',
                 'max:18',
@@ -78,8 +79,8 @@ class UserUpdateRequest extends FormRequest
     protected function prepareForValidation()
     {
         $this->merge([
-            'cpf' => $this->cpf ? preg_replace('/\D/', '', $this->cpf) : null,
-            'cnpj' => $this->cnpj ? preg_replace('/\D/', '', $this->cnpj) : null,
+            'cpf' => $this->doc_type === 'cpf' && $this->cpf ? preg_replace('/\D/', '', $this->cpf) : null,
+            'cnpj' => $this->doc_type === 'cnpj' && $this->cnpj ? preg_replace('/\D/', '', $this->cnpj) : null,
             'phone' => $this->phone ? preg_replace('/\D/', '', $this->phone) : null,
         ]);
     }
