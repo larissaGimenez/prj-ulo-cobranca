@@ -66,8 +66,8 @@ class User extends Authenticatable
     protected function cpf(): Attribute
     {
         return Attribute::make(
-            get: fn($value) => $value, // Opcional: Você poderia formatar aqui na saída
-            set: fn($value) => preg_replace('/[^0-9]/', '', $value),
+            get: fn($value) => $value,
+            set: fn($value) => $value ? preg_replace('/[^0-9]/', '', $value) : null,
         );
     }
 
@@ -77,7 +77,7 @@ class User extends Authenticatable
     protected function cnpj(): Attribute
     {
         return Attribute::make(
-            set: fn($value) => preg_replace('/[^0-9]/', '', $value),
+            set: fn($value) => $value ? preg_replace('/[^0-9]/', '', $value) : null,
         );
     }
 
@@ -92,7 +92,7 @@ class User extends Authenticatable
                     return null;
                 return preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $value);
             },
-            set: fn($value) => preg_replace('/[^0-9]/', '', $value),
+            set: fn($value) => $value ? preg_replace('/[^0-9]/', '', $value) : null,
         );
     }
 }

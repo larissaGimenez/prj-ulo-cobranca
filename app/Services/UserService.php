@@ -25,14 +25,14 @@ class UserService
     public function create(array $data): User
     {
         $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'cpf' => $data['cpf'] ?? null,
-            'cnpj' => $data['cnpj'] ?? null,
-            'phone' => $data['phone'] ?? null,
-            'role' => $data['role'] ?? 'user', // Rótulo visual
+            'name'     => $data['name'],
+            'email'    => $data['email'],
+            'cpf'      => ($data['cpf']   ?? '') ?: null,
+            'cnpj'     => ($data['cnpj']  ?? '') ?: null,
+            'phone'    => ($data['phone'] ?? '') ?: null,
+            'role'     => $data['role'] ?? 'user',
             'password' => Hash::make(Str::random(32)),
-            'status' => 'pending',
+            'status'   => 'pending',
         ]);
 
         // Atribui a Role real no Spatie
