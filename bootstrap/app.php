@@ -42,7 +42,6 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        // Rendering: Exibe a página Phoenix bonita se não estiver em modo debug
         $exceptions->render(function (Throwable $e, $request) {
             if (!config('app.debug') && !$request->is('api/*')) {
                 return response()->view('errors.custom', [], 500);
