@@ -29,12 +29,27 @@ class BillingController extends Controller
      */
     public function index()
     {
-        $syncRunning = \Illuminate\Support\Facades\Cache::has('sync_billing_operations_running');
+        $syncRunning = Cache::has('sync_billing_operations_running');
 
-        // Otimizado com Eager Loading para evitar centenas de queries no Kanban
-        $stages = BillingKanbanStage::with(['operations' => function($query) {
-            $query->orderBy('updated_at', 'desc');
-        }, 'operations.cliente'])->orderBy('sort_order', 'asc')->get();
+        // Seleciona apenas os campos usados nos cards do Kanban.
+        // Extrai sub-campos do JSONB metadata via PostgreSQL em vez de carregar o blob inteiro.
+        // ANTES: carregava metadata completo (~5-50KB/card) + relação cliente (sem uso na view).
+        // AGORA: 6 colunas simples por card → payload reduz de ~1,1MB para ~30-50KB.
+        $stages = BillingKanbanStage::with(['operations' => function ($query) {
+            $query->select([
+                'id',
+                'billing_kanban_stage_id',
+                'checklist_data',
+                'data_entrada_etapa',
+                'updated_at',
+                DB::raw("metadata->'cliente'->>'nome'                           AS cliente_nome"),
+                DB::raw("metadata->'cliente'->>'empresa'                        AS empresa"),
+                DB::raw("COALESCE((metadata->'cliente'->>'id')::BIGINT, 0)      AS cliente_db_id"),
+                DB::raw("COALESCE((metadata->>'total_divida')::NUMERIC, 0)      AS total_divida"),
+                DB::raw("COALESCE((metadata->>'vencidos_count')::INTEGER, 0)    AS vencidos_count"),
+                DB::raw("COALESCE((metadata->>'dias_inadimplente')::INTEGER, 0) AS dias_inadimplente"),
+            ])->orderBy('updated_at', 'desc');
+        }])->orderBy('sort_order', 'asc')->get();
 
         return view('billings.index', compact('stages', 'syncRunning'));
     }

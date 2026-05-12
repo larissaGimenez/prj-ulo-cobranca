@@ -106,31 +106,42 @@
                         <div class="kanban-items-container flex-1 overflow-y-auto scrollbar p-2">
                             @forelse($stage->operations as $operation)
                                 @php
-                                    $data = $operation->metadata;
-                                    $cliente = $data['cliente'] ?? [];
-                                    $empresa = $cliente['empresa'] ?? 'N/A';
-                                    $totalDivida = $data['total_divida'] ?? 0;
-                                    $vencidosCount = $data['vencidos_count'] ?? 0;
-                                    $diasInadimplente = $data['dias_inadimplente'] ?? 0;
-                                    
-                                    $dataEntrada = $operation->data_entrada_etapa ?? $operation->updated_at;
+                                    // Campos extraídos do JSONB pelo controller — sem carregar metadata completo
+                                    $clienteNome      = $operation->cliente_nome    ?? 'Cliente';
+                                    $empresa          = $operation->empresa          ?? 'N/A';
+                                    $clienteDbId      = $operation->cliente_db_id   ?? 0;
+                                    $totalDivida      = (float) ($operation->total_divida      ?? 0);
+                                    $vencidosCount    = (int)   ($operation->vencidos_count    ?? 0);
+                                    $diasInadimplente = (int)   ($operation->dias_inadimplente ?? 0);
+
+                                    $dataEntrada    = $operation->data_entrada_etapa ?? $operation->updated_at;
                                     $diasNestaEtapa = (int) \Carbon\Carbon::parse($dataEntrada)->diffInDays(now());
-                                    $textoDiasEtapa = $diasNestaEtapa == 0 ? 'Hoje' : ($diasNestaEtapa == 1 ? '1 dia nesta etapa' : $diasNestaEtapa . ' dias nesta etapa');
-                                    
+                                    $textoDiasEtapa = match(true) {
+                                        $diasNestaEtapa === 0 => 'Hoje',
+                                        $diasNestaEtapa === 1 => '1 dia nesta etapa',
+                                        default               => $diasNestaEtapa . ' dias nesta etapa',
+                                    };
+
                                     $cardChecklist = $operation->checklist_data;
                                     if (empty($cardChecklist) && !empty($stage->checklist)) {
                                         $cardChecklist = collect($stage->checklist)->map(fn($item) => ['text' => $item, 'completed' => false, 'stage_id' => $stage->id])->toArray();
                                     }
-                                    
-                                    // Filtra checklist para o badge (apenas atual)
+
                                     $currentStageItems = collect($cardChecklist)->where('stage_id', $stage->id);
+
+                                    // Objeto compacto para o modal — substitui @js($data) que serializava o metadata inteiro
+                                    $cardModalData = [
+                                        'cliente'       => ['nome' => $clienteNome, 'empresa' => $empresa, 'id' => $clienteDbId],
+                                        'total_divida'  => $totalDivida,
+                                        'vencidos_count'=> $vencidosCount,
+                                    ];
                                 @endphp
                                 <div class="card mb-2 shadow-none border border-translucent hover-card-style transition-base kanban-item cursor-pointer" 
-                                     onclick="openCardModal({{ $operation->id }}, @js($data), @js($cardChecklist ?? []), {{ $stage->id }})">
+                                     onclick="openCardModal({{ $operation->id }}, @js($cardModalData), @js($cardChecklist ?? []), {{ $stage->id }})">
                                     <div class="card-body p-2 px-3">
                                         <div class="d-flex justify-content-between align-items-start mb-1">
                                             <h6 class="mb-0 fw-bold text-body-highlight fs-10 text-truncate flex-1">
-                                                {{ $cliente['nome'] ?? 'Cliente' }}</h6>
+                                                {{ $clienteNome }}</h6>
                                             @if($currentStageItems->isNotEmpty())
                                                 @php
                                                     $completedCount = $currentStageItems->where('completed', true)->count();
@@ -169,7 +180,7 @@
                                                     </button>
                                                 </form>
                                                 
-                                                <span class="text-primary fw-bold fs-11 uppercase cursor-pointer mx-1 hover-underline" onclick="openCardModal({{ $operation->id }}, @js($data), @js($cardChecklist ?? []), {{ $stage->id }})">
+                                                <span class="text-primary fw-bold fs-11 uppercase cursor-pointer mx-1 hover-underline" onclick="openCardModal({{ $operation->id }}, @js($cardModalData), @js($cardChecklist ?? []), {{ $stage->id }})">
                                                     VER <i class="fas fa-eye ms-1"></i>
                                                 </span>
 
