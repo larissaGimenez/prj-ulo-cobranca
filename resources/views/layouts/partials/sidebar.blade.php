@@ -56,7 +56,7 @@
                     <!-- @can('access.sales')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('sales.*') ? 'active' : '' }} label-1"
-                                href="{{ route('sales.index') }}" role="button">
+                                href="#" role="button">
                                 <div class="d-flex align-items-center">
                                     <div class="dropdown-indicator-icon-wrapper"><span
                                             class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
@@ -70,7 +70,7 @@
                     <!-- @can('access.finances')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('finances.*') ? 'active' : '' }} label-1"
-                                href="{{ route('finances.index') }}" role="button">
+                                href="#" role="button">
                                 <div class="d-flex align-items-center">
                                     <div class="dropdown-indicator-icon-wrapper"><span
                                             class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
@@ -84,7 +84,7 @@
                     <!-- @can('access.logistics')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('logistics.*') ? 'active' : '' }} label-1"
-                                href="{{ route('logistics.index') }}" role="button">
+                                href="#" role="button">
                                 <div class="d-flex align-items-center">
                                     <div class="dropdown-indicator-icon-wrapper"><span
                                             class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
@@ -98,7 +98,7 @@
                     <!-- @can('access.products')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }} label-1"
-                                href="{{ route('products.index') }}" role="button">
+                                href="#" role="button">
                                 <div class="d-flex align-items-center">
                                     <div class="dropdown-indicator-icon-wrapper"><span
                                             class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
@@ -112,7 +112,7 @@
                     <!-- @can('access.supports')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('supports.*') ? 'active' : '' }} label-1"
-                                href="{{ route('supports.index') }}" role="button">
+                                href="#" role="button">
                                 <div class="d-flex align-items-center">
                                     <div class="dropdown-indicator-icon-wrapper"><span
                                             class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>
@@ -174,7 +174,7 @@
                     <!-- @can('access.credentials')
                         <div class="nav-item-wrapper">
                             <a class="nav-link {{ request()->routeIs('credentials.*') ? 'active' : '' }} label-1"
-                                href="{{ route('admin.credentials.index') }}" role="button">
+                                href="#" role="button">
                                 <div class="d-flex align-items-center">
                                     <div class="dropdown-indicator-icon-wrapper"><span
                                             class="fas fa-caret-right dropdown-indicator-icon d-none"></span></div>

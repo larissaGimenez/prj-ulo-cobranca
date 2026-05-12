@@ -5,8 +5,18 @@
     <div class="row g-4">
         {{-- Título --}}
         <div class="col-12">
-            <h2 class="mb-2 text-body-emphasis">Dashboard de Cobrança</h2>
-            <h5 class="text-body-tertiary fw-semibold">Acompanhamento de performance e recuperação de crédito em um só lugar.</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="mb-1 text-body-emphasis">Dashboard de Cobrança</h2>
+                    <h5 class="text-body-tertiary fw-semibold mb-0">Acompanhamento de performance e recuperação de crédito em um só lugar.</h5>
+                </div>
+                <form action="{{ route('dashboard.refresh') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="btn btn-phoenix-primary">
+                        <span class="fas fa-sync me-2"></span>Atualizar Dados
+                    </button>
+                </form>
+            </div>
         </div>
 
         {{-- Primeira Seção: Cards Principais e Ranking por Empresa --}}
@@ -24,11 +34,7 @@
                                 </div>
                                 <h6 class="mb-0 text-body-tertiary fw-bold">CLIENTES DEVEDORES</h6>
                             </div>
-                            <h2 class="text-primary mb-3">{{ number_format($stats['total_debtors'], 0, ',', '.') }}</h2>
-                            <div class="d-flex align-items-center">
-                                <span class="badge badge-phoenix badge-phoenix-success fs-10 me-2">+{{ $stats['debtors_diff'] }}</span>
-                                <span class="text-body-tertiary fs-10 fw-semibold text-nowrap">vs semana passada</span>
-                            </div>
+                            <h2 class="text-primary mb-0">{{ number_format($stats['total_debtors'], 0, ',', '.') }}</h2>
                         </div>
                     </div>
                 </div>
@@ -45,11 +51,7 @@
                                 </div>
                                 <h6 class="mb-0 text-body-tertiary fw-bold">TOTAL DA DÍVIDA</h6>
                             </div>
-                            <h2 class="text-danger mb-3">R$ {{ number_format($stats['total_debt_value'], 2, ',', '.') }}</h2>
-                            <div class="d-flex align-items-center">
-                                <span class="badge badge-phoenix badge-phoenix-danger fs-10 me-2">+ R$ {{ number_format($stats['debt_diff'], 0, ',', '.') }}</span>
-                                <span class="text-body-tertiary fs-10 fw-semibold text-nowrap">novos títulos</span>
-                            </div>
+                            <h2 class="text-danger mb-0">R$ {{ number_format($stats['total_debt_value'], 2, ',', '.') }}</h2>
                         </div>
                     </div>
                 </div>
@@ -66,11 +68,7 @@
                                 </div>
                                 <h6 class="mb-0 text-body-tertiary fw-bold">TOTAL DE ACORDOS</h6>
                             </div>
-                            <h2 class="text-success mb-3">{{ number_format($stats['total_agreements'], 0, ',', '.') }}</h2>
-                            <div class="d-flex align-items-center">
-                                <span class="badge badge-phoenix badge-phoenix-success fs-10 me-2">+{{ $stats['agreements_diff'] }}</span>
-                                <span class="text-body-tertiary fs-10 fw-semibold text-nowrap">vs semana passada</span>
-                            </div>
+                            <h2 class="text-success mb-0">{{ number_format($stats['total_agreements'], 0, ',', '.') }}</h2>
                         </div>
                     </div>
                 </div>

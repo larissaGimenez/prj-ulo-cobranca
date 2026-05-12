@@ -32,15 +32,22 @@ class AuditLogController extends Controller
     }
 
     /**
-     * Força o processamento da fila de logs pendentes no banco.
+     * Inicia o processamento da fila de logs em segundo plano.
+     * Não bloqueia a request HTTP (corrige CRITICAL-04 do Audit).
      */
     public function sync()
     {
-        // Roda o worker apenas até a fila esvaziar
-        \Illuminate\Support\Facades\Artisan::call('queue:work', [
-            '--stop-when-empty' => true,
-        ]);
+        $phpBinary = PHP_BINARY ?: 'php';
+        $artisanPath = base_path('artisan');
+        $command = "\"{$phpBinary}\" \"{$artisanPath}\" queue:work --stop-when-empty --max-jobs=100";
 
-        return redirect()->back()->with('success', 'Fila processada! Todos os logs pendentes foram registrados.');
+        // Spawn não-bloqueante: funciona em Windows e Linux
+        if (str_starts_with(strtoupper(PHP_OS), 'WIN')) {
+            pclose(popen("start /B {$command} > NUL 2>&1", 'r'));
+        } else {
+            exec("{$command} > /dev/null 2>&1 &");
+        }
+
+        return redirect()->back()->with('success', 'Processamento da fila iniciado em segundo plano! Os logs serão registrados em instantes.');
     }
 }

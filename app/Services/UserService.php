@@ -2,13 +2,12 @@
 
 namespace App\Services;
 
+use App\Jobs\SendUserInviteJob;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Log;
 
 class UserService
 {
@@ -77,39 +76,17 @@ class UserService
     }
 
     /**
-     * Lógica de Convite via Webhook n8n
+     * Despacha o convite para a fila (não bloqueia a request HTTP).
+     * O invite_sent_at é atualizado de forma síncrona para feedback imediato na UI.
+     * A chamada HTTP ao n8n é feita em background pelo SendUserInviteJob.
      */
     public function sendInvite(User $user): void
     {
-        $setupUrl = URL::temporarySignedRoute(
-            'password.setup',
-            now()->addHours(2),
-            ['user' => $user->id]
-        );
-
-        Log::info("Link de convite para {$user->email}: " . $setupUrl);
-
         $user->update(['invite_sent_at' => now()]);
 
-        Log::info("Tentando enviar Webhook para: " . config('services.n8n.webhook_url'));
+        Log::info("Convite enfileirado para {$user->email}");
 
-        try {
-            $response = Http::withoutVerifying()
-                ->withHeaders([
-                    'X-API-Key' => config('services.n8n.key'),
-                ])->post(config('services.n8n.webhook_url'), [
-                        'event' => 'user_invite',
-                        'user_name' => $user->name,
-                        'user_email' => $user->email,
-                        'setup_url' => $setupUrl,
-                        'expires_at' => now()->addHours(2)->format('d/m/Y H:i'),
-                    ]);
-
-            Log::info("Resposta do n8n: " . $response->status());
-
-        } catch (\Exception $e) {
-            Log::error("Erro fatal no envio: " . $e->getMessage());
-        }
+        SendUserInviteJob::dispatch($user);
     }
 
     public function setUserPassword(User $user, string $password): void
