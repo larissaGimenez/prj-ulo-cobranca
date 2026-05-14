@@ -48,8 +48,7 @@ class DashboardController extends Controller
                 SELECT
                     (SELECT COUNT(*) FROM clientes_inadimplentes)  AS total_debtors,
                     COALESCE(SUM(valor) FILTER (
-                        WHERE data_venc < CURRENT_DATE
-                          AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO')
+                        WHERE UPPER(status) = 'ATRASADO'
                     ), 0) AS total_debt_value
                 FROM titulos_conta_receber
             ");

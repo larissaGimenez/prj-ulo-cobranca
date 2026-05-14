@@ -23,22 +23,27 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->report(function (Throwable $e) {
             if (app()->bound('request')) {
                 $request = app('request');
-                
-                \App\Jobs\LogAuditEventJob::dispatch([
-                    'event_type' => 'SYSTEM_ERROR',
-                    'payload' => [
-                        'exception_class' => get_class($e),
-                        'message' => $e->getMessage(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'method' => $request->method(),
+
+                try {
+                    \App\Jobs\LogAuditEventJob::dispatch([
+                        'event_type' => 'SYSTEM_ERROR',
+                        'payload' => [
+                            'exception_class' => get_class($e),
+                            'message' => $e->getMessage(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
+                            'method' => $request->method(),
+                            'url' => $request->fullUrl(),
+                        ],
                         'url' => $request->fullUrl(),
-                    ],
-                    'url' => $request->fullUrl(),
-                    'ip_address' => $request->ip(),
-                    'user_agent' => $request->userAgent(),
-                    'user_id' => auth()->id(),
-                ]);
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                        'user_id' => auth()->id(),
+                    ]);
+                } catch (\Throwable $loggingError) {
+                    // Evita loop infinito se a fila/banco falhar ao registrar o erro
+                    error_log('Falha ao despachar LogAuditEventJob: ' . $loggingError->getMessage());
+                }
             }
         });
 

@@ -19,6 +19,12 @@ class SyncBillingOperationsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
  
+    /** Número máximo de tentativas antes de mover para failed_jobs */
+    public int $tries = 3;
+ 
+    /** Tempo de espera (segundos) entre tentativas */
+    public int $backoff = 5;
+ 
     /**
      * Execute the job.
      */
@@ -43,15 +49,9 @@ class SyncBillingOperationsJob implements ShouldQueue
             $metrics = TituloContaReceber::query()
                 ->select('cod_cliente')
                 ->selectRaw("
-                    SUM(CASE WHEN data_venc < CURRENT_DATE 
-                        AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
-                        THEN valor ELSE 0 END) as total_divida,
-                    COUNT(CASE WHEN data_venc < CURRENT_DATE 
-                        AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
-                        THEN 1 END) as vencidos_count,
-                    MIN(CASE WHEN data_venc < CURRENT_DATE 
-                        AND UPPER(status) NOT IN ('PAGO', 'LIQUIDADO', 'RECEBIDO') 
-                        THEN data_venc END) as oldest_venc,
+                    SUM(CASE WHEN UPPER(status) = 'ATRASADO' THEN valor ELSE 0 END) as total_divida,
+                    COUNT(CASE WHEN UPPER(status) = 'ATRASADO' THEN 1 END) as vencidos_count,
+                    MIN(CASE WHEN UPPER(status) = 'ATRASADO' THEN data_venc END) as oldest_venc,
                     COUNT(*) as titulos_count
                 ")
                 ->whereIn('cod_cliente', $omieIds)

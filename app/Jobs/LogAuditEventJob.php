@@ -13,6 +13,12 @@ class LogAuditEventJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /** Número máximo de tentativas antes de mover para failed_jobs */
+    public int $tries = 3;
+
+    /** Tempo de espera (segundos) entre tentativas */
+    public int $backoff = 5;
+
     protected $data;
 
     /**
